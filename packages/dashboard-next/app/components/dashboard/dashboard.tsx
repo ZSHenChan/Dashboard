@@ -3,25 +3,24 @@ import { DashboardCard } from "./reply-types";
 import { useEffect, useState } from "react";
 import { EventCard } from "./event-card";
 
-const BACKEND_URL = "http://0.0.0.0:8000/api/v1";
+const SERVER_URL = "/api/proxy";
 
 export default function Dashboard() {
   const [cards, setCards] = useState<DashboardCard[]>([]);
 
   // 1. Initial Load
   useEffect(() => {
-    fetch(`${BACKEND_URL}/user/notifications`)
+    fetch(`${SERVER_URL}/user/notifications`)
       .then((res) => res.json())
       .then((data) => {
         setCards(data);
-        console.log(data);
       })
       .catch((err) => console.error("Failed to load cards", err));
   }, []);
 
   // 2. Live Updates
   useEffect(() => {
-    const eventSource = new EventSource(`${BACKEND_URL}/user/stream`);
+    const eventSource = new EventSource(`${SERVER_URL}/user/stream`);
 
     eventSource.onmessage = (event) => {
       const newCard = JSON.parse(event.data);
@@ -42,7 +41,7 @@ export default function Dashboard() {
   ) => {
     if (action === "reply") {
       // 1. Send the instruction to FastAPI
-      await fetch(`${BACKEND_URL}/user/reply`, {
+      await fetch(`${SERVER_URL}/user/reply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -53,7 +52,7 @@ export default function Dashboard() {
       });
     } else {
       // Handle ignore/delete normally
-      await fetch(`${BACKEND_URL}/user/notifications/${card.id}`, {
+      await fetch(`${SERVER_URL}/user/notifications/${card.id}`, {
         method: "DELETE",
       });
     }

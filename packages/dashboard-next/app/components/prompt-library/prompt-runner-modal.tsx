@@ -32,6 +32,7 @@ export function PromptRunnerModal({
     addSysPrompt: prompt.addSysPrompt,
     model: prompt.model,
     inputs: prompt.inputs || ["text"],
+    persistInputs: prompt.persistInputs || [],
   });
 
   // 2. UI State
@@ -124,6 +125,7 @@ export function PromptRunnerModal({
           addSysPrompt: config.addSysPrompt,
           model: config.model,
           inputs: config.inputs,
+          persistInputs: config.persistInputs,
         }),
       });
 
@@ -151,7 +153,7 @@ export function PromptRunnerModal({
       setSelectedImage({
         data: base64Data,
         mimeType: file.type,
-        preview: base64String, // Keep full string for frontend preview
+        preview: base64String,
       });
     };
     reader.readAsDataURL(file);
@@ -172,7 +174,7 @@ export function PromptRunnerModal({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: prompt.model,
+          model: config.model,
           systemPrompt: finalSysPrompt,
           userPrompt: userInput,
           image: selectedImage
@@ -191,7 +193,8 @@ export function PromptRunnerModal({
       if (!res.body) throw new Error("No response body");
 
       // --- STREAMING LOGIC START ---
-      setUserInput("");
+      if (!config.persistInputs.includes("text")) setUserInput("");
+      if (!config.persistInputs.includes("file")) setSelectedImage(null);
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let done = false;

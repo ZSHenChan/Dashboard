@@ -37,6 +37,7 @@ export async function POST(req: Request) {
       systemPrompt: body.systemPrompt || "",
       addSysPrompt: body.addSysPrompt || [],
       model: body.model || "gemini-2.5-flash",
+      persistInputs: body.persistInputs || [],
       createdAt: new Date().toISOString(),
     };
 

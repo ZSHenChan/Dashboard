@@ -27,6 +27,7 @@ const EMPTY_TEMPLATE: PromptConfig = {
   systemPrompt: "You are a helpful AI assistant.",
   addSysPrompt: [],
   model: AVAILABLE_MODEL[0].model,
+  persistInputs: [],
 };
 
 // --- Main Component ---
@@ -212,5 +213,3 @@ export function PromptLibrary() {
     </div>
   );
 }
-
-// ... (PromptRunnerModal code remains unchanged)

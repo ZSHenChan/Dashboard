@@ -8,4 +8,5 @@ export interface PromptConfig {
   addSysPrompt: string[];
   model: string;
   inputs: InputType[];
+  persistInputs: ("text" | "file")[];
 }

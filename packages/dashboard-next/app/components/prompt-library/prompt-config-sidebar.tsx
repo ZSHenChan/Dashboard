@@ -8,6 +8,7 @@ import {
   HelpCircle,
   ImageIcon,
   Mic,
+  Pin,
   Settings2,
 } from "lucide-react";
 import { InputType, PromptConfig } from "./prompt-types";
@@ -71,6 +72,15 @@ export function PromptConfigSidebar({
       ? current.filter((t) => t !== type)
       : [...current, type];
     onChange("inputs", updated);
+  };
+
+  const togglePersistence = (type: "text" | "file") => {
+    const current = config.persistInputs || [];
+    const updated = current.includes(type)
+      ? current.filter((t) => t !== type) // Remove
+      : [...current, type]; // Add
+
+    onChange("persistInputs", updated);
   };
 
   const toggleStyleOption = (optionText: string) => {
@@ -184,6 +194,47 @@ export function PromptConfigSidebar({
               color="orange"
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-2">
+            After Run Behavior
+          </label>
+          <div className="flex gap-2">
+            <InputToggle
+              label="Keep Text"
+              // Rotate pin slightly when active for visual flair
+              icon={
+                <Pin
+                  size={14}
+                  className={
+                    config.persistInputs?.includes("text") ? "rotate-45" : ""
+                  }
+                />
+              }
+              active={config.persistInputs?.includes("text")}
+              onClick={() => togglePersistence("text")}
+              color="green"
+            />
+            <InputToggle
+              label="Keep File"
+              icon={
+                <Pin
+                  size={14}
+                  className={
+                    config.persistInputs?.includes("file") ? "rotate-45" : ""
+                  }
+                />
+              }
+              active={config.persistInputs?.includes("file")}
+              onClick={() => togglePersistence("file")}
+              color="green"
+            />
+          </div>
+          <p className="text-[10px] text-white/30 mt-2 leading-tight">
+            Enable these to prevent the input fields from clearing after you
+            click Run.
+          </p>
         </div>
 
         <div className="h-px bg-white/10" />
