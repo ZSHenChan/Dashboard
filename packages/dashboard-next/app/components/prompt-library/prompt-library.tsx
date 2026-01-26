@@ -17,6 +17,8 @@ import { PromptRunnerModal } from "./prompt-runner-modal";
 import { AddPromptCard } from "./add-prompt-card";
 import { PromptConfig } from "./prompt-types";
 import { AVAILABLE_MODEL } from "./prompt-config-sidebar";
+import { Helix } from "ldrs/react";
+import "ldrs/react/Helix.css";
 
 // --- Mock Data ---
 const EMPTY_TEMPLATE: PromptConfig = {
@@ -120,7 +122,7 @@ export function PromptLibrary() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
         <h2 className="text-3xl font-bold text-white/90 drop-shadow-md flex items-center gap-3">
-          <Sparkles /> Prompt Library
+          Prompt Library <Helix size="24" speed="4.0" color="white" />
         </h2>
 
         {/* Search Bar */}

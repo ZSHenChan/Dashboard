@@ -13,6 +13,11 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { PromptConfigSidebar } from "./prompt-config-sidebar";
 import { PromptConfig } from "./prompt-types";
+import { Helix } from "ldrs/react";
+import "ldrs/react/Helix.css";
+
+// Default values shown
+<Helix size="45" speed="2.5" color="black" />;
 
 export function PromptRunnerModal({
   prompt,
@@ -291,7 +296,12 @@ export function PromptRunnerModal({
           <div className="flex-3 flex flex-col bg-linear-to-bl from-white/5 to-transparent min-w-0">
             {/* Output Area */}
             <div className="flex-1 p-6 overflow-y-auto border-b border-white/10">
-              {response ? (
+              {isLoading ? (
+                <div className="h-full flex flex-col items-center justify-center text-white/20">
+                  <Helix size="48" speed="2.5" color="white" />
+                  <p className="mt-8">Generating content...</p>
+                </div>
+              ) : response ? (
                 <article className="prose prose-invert prose-sm max-w-none leading-relaxed">
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}

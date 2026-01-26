@@ -12,6 +12,7 @@
     "@google/genai": "^1.38.0",
     "bot-dashboard": ".",
     "ioredis": "^5.9.2",
+    "ldrs": "^1.1.9",
     "lucide-react": "^0.562.0",
     "next": "16.1.4",
     "react": "19.2.3",
