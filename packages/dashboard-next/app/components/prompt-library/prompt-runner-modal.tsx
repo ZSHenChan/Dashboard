@@ -12,23 +12,25 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { PromptConfigSidebar } from "./prompt-config-sidebar";
-import { PromptConfig, PromptTemplate } from "./prompt-types";
+import { PromptConfig } from "./prompt-types";
 
 export function PromptRunnerModal({
   prompt,
   onClose,
   onSaveSuccess,
 }: {
-  prompt: PromptTemplate;
+  prompt: PromptConfig;
   onClose: () => void;
   onSaveSuccess?: () => void;
 }) {
   // 1. Consolidated Config State
   const [config, setConfig] = useState<PromptConfig>({
+    id: prompt.id,
     title: prompt.title,
     summary: prompt.summary,
-    systemPrompt: prompt.defaultSystemPrompt,
-    model: prompt.defaultModel,
+    systemPrompt: prompt.systemPrompt,
+    addSysPrompt: prompt.addSysPrompt,
+    model: prompt.model,
     inputs: prompt.inputs || ["text"],
   });
 
@@ -118,17 +120,16 @@ export function PromptRunnerModal({
         body: JSON.stringify({
           title: config.title,
           summary: config.summary,
-          defaultSystemPrompt: config.systemPrompt,
-          defaultModel: config.model,
+          systemPrompt: config.systemPrompt,
+          addSysPrompt: config.addSysPrompt,
+          model: config.model,
           inputs: config.inputs,
         }),
       });
 
       if (!res.ok) throw new Error("Failed to save");
 
-      // Close and Refresh
       if (onSaveSuccess) onSaveSuccess();
-      onClose();
     } catch (error) {
       console.error(error);
       alert("Error saving template");
@@ -162,13 +163,17 @@ export function PromptRunnerModal({
     setIsLoading(true);
     setResponse("");
 
+    const finalSysPrompt =
+      config.systemPrompt +
+      `\nAdditionally, in your response:\n-${config.addSysPrompt.join("\n-")}`;
+
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: prompt.defaultModel,
-          systemPrompt: config.systemPrompt,
+          model: prompt.model,
+          systemPrompt: finalSysPrompt,
           userPrompt: userInput,
           image: selectedImage
             ? {
@@ -186,6 +191,7 @@ export function PromptRunnerModal({
       if (!res.body) throw new Error("No response body");
 
       // --- STREAMING LOGIC START ---
+      setUserInput("");
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let done = false;
@@ -211,7 +217,7 @@ export function PromptRunnerModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8">
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-8">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
@@ -279,7 +285,7 @@ export function PromptRunnerModal({
           />
 
           {/* RIGHT COL: Execution */}
-          <div className="flex-1 flex flex-col bg-gradient-to-br from-white/5 to-transparent min-w-0">
+          <div className="flex-3 flex flex-col bg-linear-to-bl from-white/5 to-transparent min-w-0">
             {/* Output Area */}
             <div className="flex-1 p-6 overflow-y-auto border-b border-white/10">
               {response ? (

@@ -15,26 +15,27 @@ import {
 } from "lucide-react";
 import { PromptRunnerModal } from "./prompt-runner-modal";
 import { AddPromptCard } from "./add-prompt-card";
-import { PromptTemplate } from "./prompt-types";
+import { PromptConfig } from "./prompt-types";
 import { AVAILABLE_MODEL } from "./prompt-config-sidebar";
 
 // --- Mock Data ---
-const EMPTY_TEMPLATE: PromptTemplate = {
+const EMPTY_TEMPLATE: PromptConfig = {
   id: "new", // distinct ID we can check later
   title: "New Prompt",
   summary: "Describe what this prompt does...",
   inputs: ["text"],
-  defaultSystemPrompt: "You are a helpful AI assistant.",
-  defaultModel: AVAILABLE_MODEL[0].model,
+  systemPrompt: "You are a helpful AI assistant.",
+  addSysPrompt: [],
+  model: AVAILABLE_MODEL[0].model,
 };
 
 // --- Main Component ---
 
 export function PromptLibrary() {
-  const [selectedPrompt, setSelectedPrompt] = useState<PromptTemplate | null>(
+  const [selectedPrompt, setSelectedPrompt] = useState<PromptConfig | null>(
     null,
   );
-  const [prompts, setPrompts] = useState<PromptTemplate[]>([]);
+  const [prompts, setPrompts] = useState<PromptConfig[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 

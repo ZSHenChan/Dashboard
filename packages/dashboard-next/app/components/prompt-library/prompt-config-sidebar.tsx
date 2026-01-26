@@ -1,9 +1,11 @@
 "use client";
 import {
+  Check,
   ChevronLeft,
   ChevronRight,
   File,
   FileText,
+  HelpCircle,
   ImageIcon,
   Mic,
   Settings2,
@@ -29,13 +31,40 @@ export const AVAILABLE_MODEL: GEMINI_MODEL_TEMPLATE[] = [
   { name: "Gemini 2.5 Flash", model: "gemini-2.5-flash" },
 ];
 
+const STYLE_OPTIONS = [
+  {
+    id: "skip_intro",
+    label: "Skip Fluff",
+    text: "Skip introduction or concluding remarks. Start directly with the data.",
+    description:
+      "Removes conversational filler like 'Here is the data you requested'.",
+  },
+  {
+    id: "concise",
+    label: "Concise",
+    text: "Be extremely concise. Use bullet points where possible.",
+    description: "Forces the AI to avoid long paragraphs.",
+  },
+  {
+    id: "json_only",
+    label: "JSON Only",
+    text: "Output valid JSON only. Do not include markdown formatting or code blocks.",
+    description: "Strict JSON output for code integration.",
+  },
+  {
+    id: "eli5",
+    label: "ELI5",
+    text: "Explain like I am 5 years old. Use simple analogies.",
+    description: "Simplifies complex topics for beginners.",
+  },
+];
+
 export function PromptConfigSidebar({
   isOpen,
   onToggle,
   config,
   onChange,
 }: SidebarProps) {
-  // Helper to toggle input types (text/image/audio)
   const toggleInput = (type: InputType) => {
     const current = config.inputs;
     const updated = current.includes(type)
@@ -44,10 +73,22 @@ export function PromptConfigSidebar({
     onChange("inputs", updated);
   };
 
+  const toggleStyleOption = (optionText: string) => {
+    const current = config.addSysPrompt;
+    if (current.includes(optionText)) {
+      onChange(
+        "addSysPrompt",
+        current.filter((line) => line !== optionText),
+      );
+    } else {
+      onChange("addSysPrompt", [...config.addSysPrompt, optionText]);
+    }
+  };
+
   return (
     <div
       className={`relative border-r border-white/10 bg-black/20 flex flex-col transition-all duration-300 ease-in-out ${
-        isOpen ? "w-80 md:w-80 opacity-100" : "w-8 md:w-12 opacity-100" // w-12 allows space for the toggle button strip
+        isOpen ? "w-min md:w-80 opacity-100" : "w-8 md:w-12 opacity-100" // w-12 allows space for the toggle button strip
       }`}
     >
       {/* Toggle Button (Always visible) */}
@@ -79,7 +120,7 @@ export function PromptConfigSidebar({
 
       {/* Main Content (Visible ONLY when open) */}
       <div
-        className={`flex-1 overflow-y-auto custom-scrollbar p-5 space-y-5 transition-opacity duration-200 ${isOpen ? "opacity-100" : "opacity-0 hidden"}`}
+        className={`flex-1 overflow-y-auto custom-scrollbar p-5 space-y-5 transition-opacity duration-200 no-scrollbar ${isOpen ? "opacity-100" : "opacity-0 hidden"}`}
       >
         {/* Title Input */}
         <div>
@@ -146,6 +187,65 @@ export function PromptConfigSidebar({
         </div>
 
         <div className="h-px bg-white/10" />
+
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-3">
+            Response Style
+          </label>
+          <div className="space-y-2">
+            {STYLE_OPTIONS.map((option) => {
+              // Check if the exact text exists in the system prompt
+              const isChecked = config.addSysPrompt?.includes(option.text);
+
+              return (
+                <div
+                  key={option.id}
+                  className={`flex items-start gap-3 p-2 rounded-lg border transition-all cursor-pointer group ${
+                    isChecked
+                      ? "bg-blue-500/10 border-blue-500/30"
+                      : "bg-black/20 border-white/5 hover:border-white/10"
+                  }`}
+                  onClick={() => toggleStyleOption(option.text)}
+                >
+                  {/* Custom Checkbox UI */}
+                  <div
+                    className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                      isChecked
+                        ? "bg-blue-500 border-blue-500 text-white"
+                        : "border-white/30 group-hover:border-white/50"
+                    }`}
+                  >
+                    {isChecked && <Check size={10} strokeWidth={4} />}
+                  </div>
+
+                  <div className="flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`text-sm font-medium ${isChecked ? "text-blue-200" : "text-white/80"}`}
+                      >
+                        {option.label}
+                      </span>
+
+                      {/* Tooltip Icon */}
+                      <div className="group/tooltip relative">
+                        <HelpCircle
+                          size={12}
+                          className="text-white/30 hover:text-white transition-colors cursor-help"
+                        />
+                        {/* Hover tooltip content */}
+                        <div className="absolute left-6 top-1/2 -translate-y-1/2 w-48 p-2 bg-zinc-900 border border-white/20 rounded text-xs text-white/80 shadow-xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-50 pointer-events-none">
+                          <p className="italic opacity-70">
+                            {option.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         {/* System Prompt Input */}
         <div className="flex-1 flex flex-col">

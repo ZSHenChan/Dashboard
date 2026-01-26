@@ -34,8 +34,9 @@ export async function POST(req: Request) {
       title: body.title || "Untitled Prompt",
       summary: body.summary || "No summary provided.",
       inputs: body.inputs || ["text"],
-      defaultSystemPrompt: body.defaultSystemPrompt || "",
-      defaultModel: body.defaultModel || "gemini-2.5-flash",
+      systemPrompt: body.systemPrompt || "",
+      addSysPrompt: body.addSysPrompt || [],
+      model: body.model || "gemini-2.5-flash",
       createdAt: new Date().toISOString(),
     };
 
