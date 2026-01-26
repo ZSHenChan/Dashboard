@@ -35,13 +35,13 @@ export function PromptConfigSidebar({
   return (
     <div
       className={`relative border-r border-white/10 bg-black/20 flex flex-col transition-all duration-300 ease-in-out ${
-        isOpen ? "w-full md:w-80 opacity-100" : "w-0 md:w-12 opacity-100" // w-12 allows space for the toggle button strip
+        isOpen ? "w-80 md:w-80 opacity-100" : "w-8 md:w-12 opacity-100" // w-12 allows space for the toggle button strip
       }`}
     >
       {/* Toggle Button (Always visible) */}
       <button
         onClick={onToggle}
-        className="absolute -right-3 top-4 z-20 p-1 bg-blue-600 rounded-full text-white shadow-lg hover:bg-blue-500 transition-colors border border-white/10"
+        className={`absolute -right-3 top-4 z-20 p-1 bg-blue-600 rounded-full text-white shadow-lg hover:bg-blue-500 transition-colors border border-white/10 ${isOpen ? "" : ""}`}
         title={isOpen ? "Collapse Sidebar" : "Expand Sidebar"}
       >
         {isOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}

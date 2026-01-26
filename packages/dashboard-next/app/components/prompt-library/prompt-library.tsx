@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { PromptRunnerModal } from "./prompt-runner-modal";
 import { AddPromptCard } from "./add-prompt-card";
-import { PromptTemplate } from "./prompt-library/prompt-types";
+import { PromptTemplate } from "./prompt-types";
 
 // --- Mock Data ---
 const EMPTY_TEMPLATE: PromptTemplate = {

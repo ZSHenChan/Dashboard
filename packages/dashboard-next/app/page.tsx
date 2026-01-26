@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import Dashboard from "./components/dashboard";
+import Dashboard from "./components/dashboard/dashboard";
 
 export default function Home() {
   const [gradient, setGradient] = useState(

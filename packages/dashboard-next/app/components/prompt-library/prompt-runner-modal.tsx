@@ -11,8 +11,8 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { PromptConfigSidebar } from "./prompt-library/prompt-config-sidebar";
-import { PromptConfig, PromptTemplate } from "./prompt-library/prompt-types";
+import { PromptConfigSidebar } from "./prompt-config-sidebar";
+import { PromptConfig, PromptTemplate } from "./prompt-types";
 
 export function PromptRunnerModal({
   prompt,
