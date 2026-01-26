@@ -11,8 +11,6 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { PromptConfigSidebar } from "./prompt-config-sidebar";
 import { PromptConfig, PromptTemplate } from "./prompt-types";
 
@@ -289,36 +287,6 @@ export function PromptRunnerModal({
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
-                      // Custom Code Block Renderer
-                      code({ node, inline, className, children, ...props }) {
-                        const match = /language-(\w+)/.exec(className || "");
-                        return !inline && match ? (
-                          <div className="rounded-md overflow-hidden my-4 border border-white/10">
-                            <div className="bg-white/5 px-4 py-1 text-xs text-white/50 border-b border-white/10">
-                              {match[1]}
-                            </div>
-                            <SyntaxHighlighter
-                              {...props}
-                              style={vscDarkPlus}
-                              language={match[1]}
-                              PreTag="div"
-                              customStyle={{
-                                margin: 0,
-                                background: "transparent",
-                              }}
-                            >
-                              {String(children).replace(/\n$/, "")}
-                            </SyntaxHighlighter>
-                          </div>
-                        ) : (
-                          <code
-                            {...props}
-                            className="bg-white/10 px-1 py-0.5 rounded text-sm text-pink-300"
-                          >
-                            {children}
-                          </code>
-                        );
-                      },
                       // Custom Table Styling
                       table: ({ children }) => (
                         <div className="overflow-x-auto my-4 border border-white/10 rounded-lg">
