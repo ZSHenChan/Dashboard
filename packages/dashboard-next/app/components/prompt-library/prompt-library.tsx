@@ -16,6 +16,7 @@ import {
 import { PromptRunnerModal } from "./prompt-runner-modal";
 import { AddPromptCard } from "./add-prompt-card";
 import { PromptTemplate } from "./prompt-types";
+import { AVAILABLE_MODEL } from "./prompt-config-sidebar";
 
 // --- Mock Data ---
 const EMPTY_TEMPLATE: PromptTemplate = {
@@ -24,7 +25,7 @@ const EMPTY_TEMPLATE: PromptTemplate = {
   summary: "Describe what this prompt does...",
   inputs: ["text"],
   defaultSystemPrompt: "You are a helpful AI assistant.",
-  defaultModel: "gemini-1.5-flash",
+  defaultModel: AVAILABLE_MODEL[0].model,
 };
 
 // --- Main Component ---

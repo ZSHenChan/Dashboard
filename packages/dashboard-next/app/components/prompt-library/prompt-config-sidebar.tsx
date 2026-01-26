@@ -17,6 +17,18 @@ interface SidebarProps {
   onChange: (key: keyof PromptConfig, value: any) => void;
 }
 
+interface GEMINI_MODEL_TEMPLATE {
+  name: string;
+  model: string;
+}
+
+export const AVAILABLE_MODEL: GEMINI_MODEL_TEMPLATE[] = [
+  { name: "Gemini 3 Pro Preview", model: "gemini-3-pro-preview" },
+  { name: "Gemini 3 Flash Preview", model: "gemini-3-flash-preview" },
+  { name: "Gemini 2.5 Pro", model: "gemini-2.5-pro" },
+  { name: "Gemini 2.5 Flash", model: "gemini-2.5-flash" },
+];
+
 export function PromptConfigSidebar({
   isOpen,
   onToggle,
@@ -158,10 +170,11 @@ export function PromptConfigSidebar({
             onChange={(e) => onChange("model", e.target.value)}
             className="w-full bg-black/30 border border-white/10 rounded-lg p-2 text-sm text-white focus:outline-none"
           >
-            <option value="gemini-3-flash-preview">Gemini 3 Pro Preview</option>
-            <option value="gemini-3-pro-preview">Gemini 3 Flash Preview</option>
-            <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+            {AVAILABLE_MODEL.map((model) => (
+              <option key={model.model} value={model.model}>
+                {model.name}
+              </option>
+            ))}
           </select>
         </div>
       </div>
