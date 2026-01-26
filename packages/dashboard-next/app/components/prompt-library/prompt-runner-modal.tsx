@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { PromptConfigSidebar } from "./prompt-config-sidebar";
 import { PromptConfig, PromptTemplate } from "./prompt-types";
 
@@ -33,7 +35,9 @@ export function PromptRunnerModal({
   });
 
   // 2. UI State
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(
+    prompt.id === "new" ? true : false,
+  );
 
   // Execution State
   const [userInput, setUserInput] = useState("");
@@ -49,6 +53,21 @@ export function PromptRunnerModal({
   // Saving State
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDoubleClickPaste = async () => {
+    try {
+      // 1. Read text from clipboard
+      const text = await navigator.clipboard.readText();
+
+      // 2. Update state (Append to existing text to prevent accidental overwrite)
+      setUserInput((prev) => prev + text);
+
+      // Optional: Visual feedback could go here (e.g. toast "Pasted!")
+    } catch (err) {
+      console.error("Failed to read clipboard:", err);
+      alert("Please allow clipboard access to use double-click paste.");
+    }
+  };
 
   const handleConfigChange = (key: keyof PromptConfig, value: any) => {
     setConfig((prev) => ({ ...prev, [key]: value }));
@@ -206,7 +225,7 @@ export function PromptRunnerModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-white/5">
           <h3 className="text-xl font-bold text-white flex items-center gap-2">
-            {prompt.id === "new" ? "Create New Prompt" : "Edit Prompt"}
+            {prompt.id === "new" ? "Create New Prompt" : prompt.title}
           </h3>
 
           <div className="flex items-center gap-2">
@@ -266,10 +285,65 @@ export function PromptRunnerModal({
             {/* Output Area */}
             <div className="flex-1 p-6 overflow-y-auto border-b border-white/10">
               {response ? (
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {response}
-                </ReactMarkdown>
+                <article className="prose prose-invert prose-sm max-w-none leading-relaxed">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      // Custom Code Block Renderer
+                      code({ node, inline, className, children, ...props }) {
+                        const match = /language-(\w+)/.exec(className || "");
+                        return !inline && match ? (
+                          <div className="rounded-md overflow-hidden my-4 border border-white/10">
+                            <div className="bg-white/5 px-4 py-1 text-xs text-white/50 border-b border-white/10">
+                              {match[1]}
+                            </div>
+                            <SyntaxHighlighter
+                              {...props}
+                              style={vscDarkPlus}
+                              language={match[1]}
+                              PreTag="div"
+                              customStyle={{
+                                margin: 0,
+                                background: "transparent",
+                              }}
+                            >
+                              {String(children).replace(/\n$/, "")}
+                            </SyntaxHighlighter>
+                          </div>
+                        ) : (
+                          <code
+                            {...props}
+                            className="bg-white/10 px-1 py-0.5 rounded text-sm text-pink-300"
+                          >
+                            {children}
+                          </code>
+                        );
+                      },
+                      // Custom Table Styling
+                      table: ({ children }) => (
+                        <div className="overflow-x-auto my-4 border border-white/10 rounded-lg">
+                          <table className="min-w-full divide-y divide-white/10 text-sm">
+                            {children}
+                          </table>
+                        </div>
+                      ),
+                      th: ({ children }) => (
+                        <th className="px-4 py-3 bg-white/5 text-left font-semibold text-white">
+                          {children}
+                        </th>
+                      ),
+                      td: ({ children }) => (
+                        <td className="px-4 py-3 border-t border-white/5 text-gray-300">
+                          {children}
+                        </td>
+                      ),
+                    }}
+                  >
+                    {response}
+                  </ReactMarkdown>
+                </article>
               ) : (
+                /* Empty State */
                 <div className="h-full flex flex-col items-center justify-center text-white/20">
                   <Sparkles size={48} className="mb-4 opacity-50" />
                   <p>Ready to generate content...</p>
@@ -306,7 +380,10 @@ export function PromptRunnerModal({
                 <textarea
                   value={userInput}
                   onChange={(e) => setUserInput(e.target.value)}
-                  placeholder={"Enter your prompt here"}
+                  onDoubleClick={handleDoubleClickPaste}
+                  placeholder={
+                    "Enter your prompt here, or DOUBLE click to paste"
+                  }
                   className="w-full h-24 bg-white/5 border border-white/10 rounded-xl p-4 pr-32 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
                 />
 
