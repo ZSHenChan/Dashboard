@@ -3,50 +3,45 @@ import { useEffect, useState } from "react";
 import Dashboard from "./components/dashboard/dashboard";
 
 export default function Home() {
-  const [gradient, setGradient] = useState(
-    "bg-gradient-to-br from-blue-900 to-black",
-  ); // Default night
+  // We store the colors as an object, not a class string.
+  // This allows the style={} prop to handle the smooth transition.
+  // const [gradientColors, setGradientColors] = useState({
+  //   from: "#0f172a",
+  //   via: "#1e293b",
+  //   to: "#000000",
+  // });
 
-  useEffect(() => {
-    const updateTimeBackground = () => {
-      const hour = new Date().getHours();
+  // useEffect(() => {
+  //   const updateTimeBackground = () => {
+  //     const hour = new Date().getHours();
 
-      // Define time ranges and gradients
-      if (hour >= 5 && hour < 6) {
-        // Dawn: Soft orange to light blue
-        setGradient("bg-linear-to-r from-pink-500 via-red-500 to-orange-500");
-      } else if (hour >= 6 && hour < 7) {
-        // Dawn: Soft orange to light blue
-        setGradient(
-          "bg-gradient-to-br from-indigo-400 via-purple-300 to-orange-200",
-        );
-      } else if (hour >= 7 && hour < 17) {
-        // Day: Bright blue sky
-        setGradient(
-          "bg-linear-to-br from-orange-200 via-cyan-200 via-blue-300 to-blue-400",
-        );
-      } else if (hour >= 17 && hour < 20) {
-        // Sunset: Deep purple to fiery orange
-        setGradient(
-          "bg-gradient-to-br from-indigo-800 via-purple-600 to-orange-400",
-        );
-      } else {
-        // Night: Deep blues and black
-        setGradient("bg-gradient-to-br from-slate-800 via-slate-900 to-black");
-      }
-    };
+  //     // We use Hex codes here to ensure CSS can interpolate them perfectly.
+  //     // You can grab these hex codes from the Tailwind color palette.
+  //     if (hour >= 5 && hour < 6) {
+  //       // Dawn: Pink to Orange
+  //       setGradientColors({ from: "#ec4899", via: "#ef4444", to: "#f97316" });
+  //     } else if (hour >= 6 && hour < 7) {
+  //       // Morning: Indigo to Orange
+  //       setGradientColors({ from: "#818cf8", via: "#d8b4fe", to: "#fdba74" });
+  //     } else if (hour >= 7 && hour < 18) {
+  //       // Day: Blue Sky
+  //       setGradientColors({ from: "#fed7aa", via: "#a5f3fc", to: "#60a5fa" });
+  //     } else if (hour >= 18 && hour < 20) {
+  //       // Sunset: Purple to Orange
+  //       setGradientColors({ from: "#3730a3", via: "#9333ea", to: "#fb923c" });
+  //     } else {
+  //       // Night: Dark Slate/Black
+  //       setGradientColors({ from: "#0f172a", via: "#1e293b", to: "#000000" });
+  //     }
+  //   };
 
-    updateTimeBackground();
-    // Check every minute to update background if the hour changes
-    const interval = setInterval(updateTimeBackground, 60000);
-    return () => clearInterval(interval);
-  }, []);
+  //   updateTimeBackground();
+  //   const interval = setInterval(updateTimeBackground, 60000);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   return (
-    // formatting: transition-colors ensures the background changes smoothly rather than snapping
-    <div
-      className={`flex min-h-screen items-center justify-center font-sans transition-all duration-1000 ease-in-out ${gradient}`}
-    >
+    <div className="flex min-h-screen items-center justify-center font-sans transition-all duration-[3000ms] ease-in-out animate-gradient linear-gradient(to bottom, rgba(9,21,45,1) 0%,rgba(28,30,147,1) 53%,rgba(83,101,155,1) 100%)">
       <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-start py-32 px-4 sm:px-16">
         <h1 className="text-4xl font-bold text-white/90 mb-8 drop-shadow-md">
           My Dashboard
