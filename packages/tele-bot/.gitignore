@@ -6,6 +6,11 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# anon
+*.session
+anon_gemini.session
+anon.session
+
 # C extensions
 *.so
 
