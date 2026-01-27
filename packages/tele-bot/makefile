@@ -1,12 +1,12 @@
 # Default values
 ENV ?= local
-DEBUG ?= false
+DEBUG ?= true
 
 # Formatting logic for the debug flag
 ifeq ($(DEBUG), true)
     DEBUG_FLAG := --debug
 else
-    DEBUG_FLAG :=
+    DEBUG_FLAG := 
 endif
 
 .PHONY: run install help

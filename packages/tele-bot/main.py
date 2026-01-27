@@ -11,7 +11,7 @@ import EventKit
 from Foundation import NSDate, NSTimeZone
 from zoneinfo import ZoneInfo
 
-load_dotenv()
+load_dotenv(".env")
 
 GEMINI_MODEL = "gemini-3-pro-preview"
 MY_REPLY_STYLE = """
