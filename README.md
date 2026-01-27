@@ -1,6 +1,6 @@
 # Personal Dashboard
 
-A unified hobby project designed to streamline personal digital communication and productivity using Large Language Models (LLMs). This dashboard acts as a central hub for managing incoming messages across various platforms and maintaining a versatile library of AI prompts.
+This is a hobby project designed to streamline personal digital communication and productivity using Large Language Models (LLMs). This dashboard acts as a central hub for managing incoming messages across various platforms and maintaining a versatile library of AI prompts for daily tasks.
 
 ## Key Features
 
