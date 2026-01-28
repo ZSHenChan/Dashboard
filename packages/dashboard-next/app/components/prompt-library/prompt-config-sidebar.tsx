@@ -47,10 +47,10 @@ const STYLE_OPTIONS = [
     description: "Forces the AI to avoid long paragraphs.",
   },
   {
-    id: "json_only",
-    label: "JSON Only",
-    text: "Output valid JSON only. Do not include markdown formatting or code blocks.",
-    description: "Strict JSON output for code integration.",
+    id: "analogy_first",
+    label: "Analogy First",
+    text: "For every complex concept, provide a real-world analogy (e.g., 'A server is like a waiter in a restaurant').",
+    description: "Provide real-world analogy for complex concepts",
   },
   {
     id: "eli5",

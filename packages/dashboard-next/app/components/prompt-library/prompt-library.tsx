@@ -5,7 +5,6 @@ import {
   Image as ImageIcon,
   Mic,
   Settings2,
-  Sparkles,
   Maximize2,
   Search,
   Loader2,
@@ -20,6 +19,25 @@ import { AVAILABLE_MODEL } from "./prompt-config-sidebar";
 import { Helix } from "ldrs/react";
 import "ldrs/react/Helix.css";
 
+const DEMO_PROMPTS: PromptConfig[] = [
+  {
+    id: "demo_3314",
+    title: "Demo Prompt: Tailor Resume",
+    summary:
+      "Personal coach to customize your resume based on job role description",
+    inputs: ["text", "file"],
+    systemPrompt: `I am going to upload my resume and list out the job description posted by a company. I need you to:
+
+1. Advise if my experiences and skills really fit the job role. Highlight the technical skills required by the role.
+
+2. Clearly point out which part of my resume needed changes (for me to easily find out the part to edit my document).
+
+3. Customize my resume to fit the job requirements and show the final result.`,
+    addSysPrompt: ["skip_intro"],
+    model: AVAILABLE_MODEL[0].model,
+    persistInputs: [],
+  },
+];
 // --- Mock Data ---
 const EMPTY_TEMPLATE: PromptConfig = {
   id: "new", // distinct ID we can check later
@@ -46,10 +64,14 @@ export function PromptLibrary() {
     fetch("/api/prompts")
       .then((res) => res.json())
       .then((data) => {
-        if (Array.isArray(data)) setPrompts(data);
+        if (Array.isArray(data) && data.length != 0) setPrompts(data);
+        else setPrompts(DEMO_PROMPTS);
         setIsLoading(false);
       })
-      .catch(() => setIsLoading(false));
+      .catch(() => {
+        setIsLoading(false);
+        setPrompts(DEMO_PROMPTS);
+      });
   };
 
   const fetchPrompts = () => {
