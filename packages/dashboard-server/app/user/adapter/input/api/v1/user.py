@@ -105,7 +105,17 @@ async def stream_events(request: Request):
 # 3. ACTION TAKEN: Delete the item
 @user_router.delete("/notifications/{card_id}")
 async def delete_notification(card_id: str):
-    # Remove only this specific item from the Hash
+    raw_json = await r.hget("dashboard:items", card_id)
+    
+    if raw_json:
+        data = json.loads(raw_json)
+        chat_id = data.get('chat_id')
+        
+        # 2. Remove from Index
+        if chat_id:
+            await r.hdel("dashboard:active_chats", str(chat_id))
+
+    # 3. Remove from Main Storage
     deleted_count = await r.hdel("dashboard:items", card_id)
     return {"deleted": deleted_count > 0}
 
