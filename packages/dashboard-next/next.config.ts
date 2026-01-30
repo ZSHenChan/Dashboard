@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/proxy/:path*",
-        destination: "http://dashboard-server-obyf.onrender.com/api/v1/:path*",
+        destination: "http://dashboard-server-obyf.onrender.com/:path*",
         // destination: "http://0.0.0.0:8000/:path*",
       },
     ];
