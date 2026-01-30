@@ -39,3 +39,9 @@ REDIS_PASSWORD=optional
 2.  **Process**: After the debounce period, the batch is sent to the LLM.
 3.  **Notify**: A summary card is pushed to Redis.
 4.  **React**: The bot listens for return commands to autonomously reply or schedule events.
+
+### Pending features
+
+- UI to customize LLM config, system instructions etc.
+- Auto reply using machine learning
+- Email screening

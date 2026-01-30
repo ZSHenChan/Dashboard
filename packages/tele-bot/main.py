@@ -14,6 +14,7 @@ from zoneinfo import ZoneInfo
 load_dotenv(".env")
 
 GEMINI_MODEL = "gemini-3-pro-preview"
+DEBOUNCE_BUFFER_SEC = 45
 MY_REPLY_STYLE = """
 STYLE GUIDE:
 - Use lowercase mostly.
@@ -71,17 +72,12 @@ REDIS_PORT = os.getenv('REDIS_PORT')
 REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
 
 # --- SETUP ---
-
-# 2. Setup Redis
 redis_client = redis.Redis(host=REDIS_URL, port=REDIS_PORT ,decode_responses=True, username="default", password=REDIS_PASSWORD)
 
-# 2. Setup Gemini (JSON Mode)
 google_client = genai.Client(api_key=GEMINI_API_KEY)
 
-# 3. Setup Telegram
 tele_client = TelegramClient('anon_gemini', TELE_API_ID, TELE_API_HASH)
 
-# In-memory map to handle the "Debounce" timers
 pending_tasks = {}
 
 async def command_listener(client, r):
@@ -194,24 +190,38 @@ async def process_batch(chat_id, sender_name):
             lines.append(f"{name}: {m.text}")
             
     full_conversation = "\n".join(lines)
-    
+
     try:
+        existing_card_id = await redis_client.hget("dashboard:active_chats", str(chat_id))
+        
+        if existing_card_id:
+            print(f"🔄 Follow-up detected for {chat_id}. Removing stale card {existing_card_id}...")
+            
+            # A. Remove from the Main Storage
+            await redis_client.hdel("dashboard:items", existing_card_id)
+            
+            # B. Notify Frontend to remove it from UI (Optional but smooth)
+            # We can send a 'delete' event so the card disappears instantly
+            delete_event = json.dumps({"action": "delete", "id": existing_card_id})
+            await redis_client.publish("dashboard:events", delete_event)
+    
+    
         card_object: DashboardCard = prompt_llm(full_conversation=full_conversation)
 
-        if card_object.auto_reply_allowed and card_object.urgency != 'high':
-            print(f"🚀 Auto-Replying to {chat_id}...")
+        # if card_object.auto_reply_allowed and card_object.urgency != 'high':
+        #     print(f"🚀 Auto-Replying to {chat_id}...")
             
-            best_reply = card_object.reply_options[0].text
+        #     best_reply = card_object.reply_options[0].text
             
-            command = {
-                "action": "reply",
-                "chat_id": chat_id,
-                "text": best_reply
-            }
+        #     command = {
+        #         "action": "reply",
+        #         "chat_id": chat_id,
+        #         "text": best_reply
+        #     }
             
-            await redis_client.publish("userbot:commands", json.dumps(command))
+        #     await redis_client.publish("userbot:commands", json.dumps(command))
             
-            return
+        #     return
 
         card_dict = card_object.model_dump()
 
@@ -219,14 +229,17 @@ async def process_batch(chat_id, sender_name):
         card_dict['id'] = card_id 
         card_dict['chat_id'] = chat_id
         card_dict['timestamp'] = datetime.now().isoformat()
+        card_dict['raw_history_log'] = full_conversation
 
         json_payload = json.dumps(card_dict)
 
+        # Store to database
         await redis_client.hset("dashboard:items", card_id, json_payload)
-    
+
+        await redis_client.hset("dashboard:active_chats", str(chat_id), card_id)
+        # Publish to subscriped frontend
         await redis_client.publish("dashboard:events", json_payload)
         print(f"✅ Queued summary for {sender_name}")
-
 
     except Exception as e:
         print(f"❌ Error in Gemini/Redis: {e}")
@@ -235,7 +248,6 @@ async def process_batch(chat_id, sender_name):
 async def handler(event):
     if not event.is_private:
         return 
-
     chat_id = event.chat_id
     sender = await event.get_sender()
     sender_name = sender.first_name or "Unknown"
@@ -247,16 +259,15 @@ async def handler(event):
     pending_tasks[chat_id] = task
 
 async def wait_and_trigger(chat_id, sender_name):
-    await asyncio.sleep(45)
+    await asyncio.sleep(DEBOUNCE_BUFFER_SEC)
     await process_batch(chat_id, sender_name)
     del pending_tasks[chat_id]
 
+# ? Under testing
 def add_event_native(title, start_dt, duration_minutes, calendar_type:str = None, source_name:str = 'iCloud', alert_minutes_before:str = None):
     store = EventKit.EKEventStore.alloc().init()
     
-    # Request Access (This usually fails in simple scripts without an app bundle info.plist)
-    # Ideally, run this in an environment that already has permissions.
-    
+    # Request for permission
     permission_determined = False
 
     def request_callback(granted, error):
@@ -269,10 +280,9 @@ def add_event_native(title, start_dt, duration_minutes, calendar_type:str = None
     
     status = EventKit.EKEventStore.authorizationStatusForEntityType_(EventKit.EKEntityTypeEvent)
     
-    if status == 0: # Not Determined
+    if status == 0:
         print("Status: Not Determined. Attempting to trigger popup...")
         
-        # New macOS (Sonoma/Sequoia) API vs Old API
         if hasattr(store, "requestFullAccessToEventsWithCompletion_"):
             store.requestFullAccessToEventsWithCompletion_(request_callback)
         else:
@@ -294,8 +304,6 @@ def add_event_native(title, start_dt, duration_minutes, calendar_type:str = None
         print("Status: Authorized. You already have access!")
 
 
-    # Note: Modern macOS requires explicit permission handling here, 
-    # which can be complex for a standalone script.
 
     event = EventKit.EKEvent.eventWithEventStore_(store)
     event.setTitle_(title)
@@ -357,6 +365,9 @@ def add_event_native(title, start_dt, duration_minutes, calendar_type:str = None
         print(f"✅ Success: '{title}' added for {start_dt.strftime('%d %b %H:%M')} SGT")
     else:
         print(f"❌ Error saving event: {error}")
+
+from pymongo import MongoClient
+from pymongo.server_api import ServerApi
 
 async def main():
     print("🚀 Userbot Started...")
