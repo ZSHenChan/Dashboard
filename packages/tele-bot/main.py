@@ -229,7 +229,7 @@ async def process_batch(chat_id, sender_name):
         card_dict['id'] = card_id 
         card_dict['chat_id'] = chat_id
         card_dict['timestamp'] = datetime.now().isoformat()
-        card_dict['raw_history_log'] = full_conversation
+        card_dict['conversation_history'] = lines
 
         json_payload = json.dumps(card_dict)
 
