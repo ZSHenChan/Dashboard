@@ -1,9 +1,10 @@
 import os
+from pathlib import Path
+from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
 
-from pydantic_settings import BaseSettings
+ROOT = Path(__file__).resolve().parents[1]
 
-
-class Config(BaseSettings):
+class ServerSettings(BaseSettings):
     ENV: str = "development"
     DEBUG: bool = True
     APP_HOST: str = "0.0.0.0"
@@ -15,24 +16,44 @@ class Config(BaseSettings):
     SENTRY_SDN: str = ""
     CELERY_BROKER_URL: str = "amqp://user:bitnami@localhost:5672/"
     CELERY_BACKEND_URL: str = "redis://:password123@localhost:6379/0"
-    REDIS_HOST: str = "localhost"
-    REDIS_PORT: int = 6379
+    REDIS_HOST: str = 'localhost:4000'
+    REDIS_URL: str = 'localhost'
+    REDIS_PORT: str = '6379'
+    REDIS_PASSWORD: str = 'REDIS_PASSWORD_DEFAULT'
+    MONGODB_URL: str = 'MONGODB_URL'
+    MONGODB_AGENT: str = 'tele_agent_db'
+    MONGODB_LOGS: str = 'training_logs'
+
+class BaseConfig(
+    ServerSettings, 
+    BaseSettings
+):
+    """
+    Master Config class inheriting from all Mixins.
+    """
+    model_config = SettingsConfigDict(
+        env_file=str(ROOT / ".env"),
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore" # Good practice: ignore unknown env vars to prevent crashes
+    )
 
 
-class TestConfig(Config):
+class TestConfig(BaseConfig):
     WRITER_DB_URL: str = "mysql+aiomysql://fastapi:fastapi@localhost:3306/fastapi_test"
     READER_DB_URL: str = "mysql+aiomysql://fastapi:fastapi@localhost:3306/fastapi_test"
 
 
-class LocalConfig(Config):
+class LocalConfig(BaseConfig):
     ...
 
 
-class ProductionConfig(Config):
+class ProductionConfig(BaseConfig):
     DEBUG: bool = False
 
 
-def get_config():
+
+def get_config() -> BaseConfig:
     env = os.getenv("ENV", "local")
     config_type = {
         "test": TestConfig(),
@@ -42,4 +63,4 @@ def get_config():
     return config_type[env]
 
 
-config: Config = get_config()
+config = get_config()

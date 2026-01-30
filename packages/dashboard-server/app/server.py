@@ -16,6 +16,7 @@ from core.fastapi.middlewares import (
     SQLAlchemyMiddleware,
 )
 from core.helpers.cache import Cache, CustomKeyMaker, RedisBackend
+from app.api.event import event_router
 
 
 def init_routers(app_: FastAPI) -> None:
@@ -24,6 +25,7 @@ def init_routers(app_: FastAPI) -> None:
     auth_router.container = container
     app_.include_router(user_router)
     app_.include_router(auth_router)
+    app_.include_router(event_router)
 
 
 def init_listeners(app_: FastAPI) -> None:
