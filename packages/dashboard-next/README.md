@@ -4,9 +4,24 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 - Acc used for Redis DB: zishenchan@gmail.com
 
+## Environment Variables
+
+To run this project, you will need to add the following environment variables to your `.env` file:
+
+- `GOOGLE_API_KEY`
+- `REDIS_URL`
+
 ## Getting Started
 
-First, run the development server:
+First, install the dependencies:
+
+```bash
+npm i
+# or
+bun i
+```
+
+Then, run the development server:
 
 ```bash
 npm run dev

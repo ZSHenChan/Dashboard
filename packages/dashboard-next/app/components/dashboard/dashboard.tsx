@@ -1,5 +1,5 @@
 "use client";
-import { DashboardCard } from "./reply-types";
+import { DashboardCard, ReplyMetadata } from "./reply-types";
 import { useEffect, useState } from "react";
 import { EventCard } from "./event-card";
 
@@ -10,17 +10,18 @@ export default function Dashboard() {
 
   // 1. Initial Load
   useEffect(() => {
-    fetch(`${SERVER_URL}/user/notifications`)
+    fetch(`${SERVER_URL}/event/notifications`)
       .then((res) => res.json())
       .then((data) => {
         setCards(data);
+        console.log(data);
       })
       .catch((err) => console.error("Failed to load cards", err));
   }, []);
 
   // 2. Live Updates
   useEffect(() => {
-    const eventSource = new EventSource(`${SERVER_URL}/user/stream`);
+    const eventSource = new EventSource(`${SERVER_URL}/event/stream`);
 
     eventSource.onmessage = (event) => {
       const newCard = JSON.parse(event.data);
@@ -37,22 +38,26 @@ export default function Dashboard() {
   const handleAction = async (
     card: DashboardCard,
     action: string,
-    text: string[] = [],
+    payload?: {
+      messages: string[];
+      meta: ReplyMetadata;
+    },
   ) => {
     if (action === "reply") {
       // 1. Send the instruction to FastAPI
-      await fetch(`${SERVER_URL}/user/reply`, {
+      await fetch(`${SERVER_URL}/event/reply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: card.chat_id,
-          text: text,
           card_id: card.id,
+          text: payload?.messages,
+          meta: payload?.meta,
         }),
       });
     } else {
       // Handle ignore/delete normally
-      await fetch(`${SERVER_URL}/user/notifications/${card.id}`, {
+      await fetch(`${SERVER_URL}/event/notifications/${card.id}`, {
         method: "DELETE",
       });
     }
