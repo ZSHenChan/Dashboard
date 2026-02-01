@@ -24,8 +24,17 @@ class ServerSettings(BaseSettings):
     MONGODB_AGENT: str = 'tele_agent_db'
     MONGODB_LOGS: str = 'training_logs'
 
+class LoggingSettings(BaseSettings):
+    CENTRAL_LOG_FILE_NAME: str = "central.log"
+    CENTRAL_LOG_FILE_PATH: str = "central_logs/"
+    SESSION_LOGGER_NAME: str = "session"
+    SESSION_LOG_FILE_NAME: str = "session.log"
+    SESSION_LOG_FILE_PATH: str = "session_logs/session.log"
+    SESS_LOG_FORMAT: str = "%(asctime)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s"
+
 class BaseConfig(
     ServerSettings, 
+    LoggingSettings,
     BaseSettings
 ):
     """

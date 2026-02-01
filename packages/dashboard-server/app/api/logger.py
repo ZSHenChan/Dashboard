@@ -8,7 +8,7 @@ client = MongoClient(config.MONGODB_URL)
 db = client[config.MONGODB_AGENT]
 collection = db[config.MONGODB_LOGS]
 
-def log_training_data(history: str, chosen_reply: List[str], metadata):
+def log_training_data(history: List[str], chosen_reply: List[str], metadata):
     entry = {
         "timestamp": datetime.now(),
         "chat_history": history,

@@ -112,7 +112,7 @@ async def command_listener(client, r):
                     
                         await asyncio.sleep(random.uniform(0.3, 0.8))
 
-                    print(f"✅ Sent human-like reply: {reply_text_list}")
+                    print(f"✅ Sent {len(reply_text_list)} chat bubbles")
 
                 elif action == "calendar":
                     title = data.get("title")
@@ -181,7 +181,7 @@ async def process_batch(chat_id, sender_name):
             sender_name = sender.first_name
             break
 
-    print(f"⚡ Processing batch for {sender_name}...")
+    print(f"⚡ Processing batch for {chat_id}...")
 
     lines = []
     for m in reversed(history_objs):
@@ -239,7 +239,7 @@ async def process_batch(chat_id, sender_name):
         await redis_client.hset("dashboard:active_chats", str(chat_id), card_id)
         # Publish to subscriped frontend
         await redis_client.publish("dashboard:events", json_payload)
-        print(f"✅ Queued summary for {sender_name}")
+        print(f"✅ Queued summary for {chat_id}")
 
     except Exception as e:
         print(f"❌ Error in Gemini/Redis: {e}")

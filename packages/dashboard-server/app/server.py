@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware import Middleware
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,6 +10,7 @@ from app.container import Container
 from app.user.adapter.input.api import router as user_router
 from core.config import config
 from core.exceptions import CustomException
+from core.fastapi.logging_config import LOGGING_CONFIG
 from core.fastapi.dependencies import Logging
 from core.fastapi.middlewares import (
     AuthBackend,
@@ -17,7 +20,7 @@ from core.fastapi.middlewares import (
 )
 from core.helpers.cache import Cache, CustomKeyMaker, RedisBackend
 from app.api.event import event_router
-
+from app.api.calendar import calendar_router
 
 def init_routers(app_: FastAPI) -> None:
     container = Container()
@@ -26,6 +29,7 @@ def init_routers(app_: FastAPI) -> None:
     app_.include_router(user_router)
     app_.include_router(auth_router)
     app_.include_router(event_router)
+    app_.include_router(calendar_router)
 
 
 def init_listeners(app_: FastAPI) -> None:
@@ -76,6 +80,7 @@ def init_cache() -> None:
 
 
 def create_app() -> FastAPI:
+    logging.config.dictConfig(LOGGING_CONFIG)
     app_ = FastAPI(
         title="Hide",
         description="Hide API",

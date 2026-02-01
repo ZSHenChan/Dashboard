@@ -14,7 +14,6 @@ export default function Dashboard() {
       .then((res) => res.json())
       .then((data) => {
         setCards(data);
-        console.log(data);
       })
       .catch((err) => console.error("Failed to load cards", err));
   }, []);
