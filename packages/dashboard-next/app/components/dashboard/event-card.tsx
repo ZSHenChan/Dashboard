@@ -301,7 +301,7 @@ export function EventCard({ card, onAction }: EventCardProps) {
 
     onAction(card, "reply", {
       messages: cleanMessages,
-      meta: currentMeta, // Pass the stored metadata
+      meta: currentMeta,
     });
   };
 

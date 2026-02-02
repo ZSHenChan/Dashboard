@@ -1,23 +1,10 @@
 "use client";
-import { useRef, useState } from "react";
-import {
-  Image as ImageIcon,
-  X,
-  Play,
-  Sparkles,
-  Loader2,
-  Save,
-  Trash2,
-} from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { useState } from "react";
+import { X, Loader2, Save, Trash2 } from "lucide-react";
 import { PromptConfigSidebar } from "./prompt-config-sidebar";
 import { PromptConfig } from "./prompt-types";
-import { Helix } from "ldrs/react";
-import "ldrs/react/Helix.css";
-
-// Default values shown
-<Helix size="45" speed="2.5" color="black" />;
+import { PromptOutput } from "./modal-textarea";
+import { PromptInputArea } from "./input";
 
 export function PromptRunnerModal({
   prompt,
@@ -52,28 +39,12 @@ export function PromptRunnerModal({
     mimeType: string;
     preview: string;
   } | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [response, setResponse] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   // Saving State
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  const handleDoubleClickPaste = async () => {
-    try {
-      // 1. Read text from clipboard
-      const text = await navigator.clipboard.readText();
-
-      // 2. Update state (Append to existing text to prevent accidental overwrite)
-      setUserInput((prev) => prev + text);
-
-      // Optional: Visual feedback could go here (e.g. toast "Pasted!")
-    } catch (err) {
-      console.error("Failed to read clipboard:", err);
-      alert("Please allow clipboard access to use double-click paste.");
-    }
-  };
 
   const handleConfigChange = (key: keyof PromptConfig, value: any) => {
     setConfig((prev) => ({ ...prev, [key]: value }));
@@ -143,25 +114,6 @@ export function PromptRunnerModal({
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      // We need to strip the metadata prefix (e.g., "data:image/png;base64,") for the API
-      const base64Data = base64String.split(",")[1];
-
-      setSelectedImage({
-        data: base64Data,
-        mimeType: file.type,
-        preview: base64String,
-      });
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleRun = async () => {
@@ -295,119 +247,18 @@ export function PromptRunnerModal({
           {/* RIGHT COL: Execution */}
           <div className="flex-3 flex flex-col bg-linear-to-bl from-white/5 to-transparent min-w-0">
             {/* Output Area */}
-            <div className="flex-1 p-6 overflow-y-auto border-b border-white/10">
-              {isLoading ? (
-                <div className="h-full flex flex-col items-center justify-center text-white/20">
-                  <Helix size="48" speed="2.5" color="white" />
-                  <p className="mt-8">Generating content...</p>
-                </div>
-              ) : response ? (
-                <article className="prose prose-invert prose-sm max-w-none leading-relaxed">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      // Custom Table Styling
-                      table: ({ children }) => (
-                        <div className="overflow-x-auto my-4 border border-white/10 rounded-lg">
-                          <table className="min-w-full divide-y divide-white/10 text-sm">
-                            {children}
-                          </table>
-                        </div>
-                      ),
-                      th: ({ children }) => (
-                        <th className="px-4 py-3 bg-white/5 text-left font-semibold text-white">
-                          {children}
-                        </th>
-                      ),
-                      td: ({ children }) => (
-                        <td className="px-4 py-3 border-t border-white/5 text-gray-300">
-                          {children}
-                        </td>
-                      ),
-                    }}
-                  >
-                    {response}
-                  </ReactMarkdown>
-                </article>
-              ) : (
-                /* Empty State */
-                <div className="h-full flex flex-col items-center justify-center text-white/20">
-                  <Sparkles size={48} className="mb-4 opacity-50" />
-                  <p>Ready to generate content...</p>
-                </div>
-              )}
-            </div>
+            <PromptOutput isLoading={isLoading} response={response} />
 
             {/* Input Area */}
-            <div className="p-4 bg-black/20">
-              <div className="relative">
-                {prompt.inputs.includes("image") && selectedImage && (
-                  <div className="absolute bottom-16 left-0 mb-2 flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-2 rounded-lg border border-white/20 animate-in slide-in-from-bottom-2">
-                    <img
-                      src={selectedImage.preview}
-                      alt="Upload preview"
-                      className="w-8 h-8 rounded object-cover border border-white/30"
-                    />
-                    <span className="text-xs text-white/80">
-                      Image attached
-                    </span>
-                    <button
-                      onClick={() => {
-                        setSelectedImage(null);
-                        if (fileInputRef.current)
-                          fileInputRef.current.value = "";
-                      }}
-                      className="ml-2 hover:text-red-400 text-white/50 transition"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                )}
-
-                <textarea
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
-                  onDoubleClick={handleDoubleClickPaste}
-                  placeholder={
-                    "Enter your prompt here, or DOUBLE click to paste"
-                  }
-                  className="w-full h-24 bg-white/5 border border-white/10 rounded-xl p-4 pr-32 text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
-                />
-
-                {/* Action Bar inside Textarea */}
-                <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                  {/* Upload Buttons based on supported inputs */}
-
-                  {prompt.inputs.includes("file") && (
-                    <>
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        accept="file"
-                        onChange={handleImageUpload}
-                      />
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className={`p-2 rounded-lg transition ${selectedImage ? "bg-blue-500/20 text-blue-300 ring-1 ring-blue-500/50" : "bg-white/10 hover:bg-white/20 text-white/70 hover:text-white"}`}
-                        title="Upload Image"
-                      >
-                        <ImageIcon size={18} />
-                      </button>
-                    </>
-                  )}
-
-                  <button
-                    onClick={handleRun}
-                    disabled={isLoading || !userInput.trim()}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? "Running..." : "Run"}{" "}
-                    <Play size={14} fill="currentColor" />
-                  </button>
-                </div>
-              </div>
-            </div>
+            <PromptInputArea
+              value={userInput}
+              onChange={setUserInput}
+              selectedImage={selectedImage}
+              onImageSelect={setSelectedImage}
+              onRun={handleRun}
+              isLoading={isLoading}
+              supportedInputs={prompt.inputs}
+            />
           </div>
         </div>
       </div>
