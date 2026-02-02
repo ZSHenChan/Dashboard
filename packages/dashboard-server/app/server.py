@@ -1,4 +1,4 @@
-import logging
+import logging, os
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware import Middleware
@@ -10,17 +10,20 @@ from app.container import Container
 from app.user.adapter.input.api import router as user_router
 from core.config import config
 from core.exceptions import CustomException
-from core.fastapi.logging_config import LOGGING_CONFIG
 from core.fastapi.dependencies import Logging
 from core.fastapi.middlewares import (
     AuthBackend,
     AuthenticationMiddleware,
-    ResponseLogMiddleware,
     SQLAlchemyMiddleware,
+    RequestIDMiddleware,
+    AccessLogMiddleware
 )
 from core.helpers.cache import Cache, CustomKeyMaker, RedisBackend
 from app.api.event import event_router
 from app.api.calendar import calendar_router
+from app.logging_config import LOGGING_CONFIG
+
+import sentry_sdk
 
 def init_routers(app_: FastAPI) -> None:
     container = Container()
@@ -64,13 +67,14 @@ def make_middleware() -> list[Middleware]:
             allow_methods=["*"],
             allow_headers=["*"],
         ),
+        Middleware(RequestIDMiddleware),
+        Middleware(AccessLogMiddleware),
         Middleware(
             AuthenticationMiddleware,
             backend=AuthBackend(),
             on_error=on_auth_error,
         ),
         Middleware(SQLAlchemyMiddleware),
-        Middleware(ResponseLogMiddleware),
     ]
     return middleware
 
@@ -80,7 +84,19 @@ def init_cache() -> None:
 
 
 def create_app() -> FastAPI:
+    # Init Central Logger
+    log_dir = os.path.dirname(f'{config.CENTRAL_LOG_FILE_PATH}/{config.CENTRAL_LOG_FILE_NAME}')
+
+    if log_dir and not os.path.exists(log_dir):
+        os.makedirs(log_dir, exist_ok=True)
     logging.config.dictConfig(LOGGING_CONFIG)
+
+    # Init Sentry
+    sentry_sdk.init(
+        dsn=config.SENTRY_DSN,
+        send_default_pii=True,
+    )
+
     app_ = FastAPI(
         title="Hide",
         description="Hide API",
@@ -93,6 +109,12 @@ def create_app() -> FastAPI:
     init_routers(app_=app_)
     init_listeners(app_=app_)
     init_cache()
+
+    @app_.on_event("startup")
+    async def startup_msg():
+        logger = logging.getLogger(config.CENTRAL_LOGGER_NAME)
+        logger.info("Application startup complete")
+
     return app_
 
 

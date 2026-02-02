@@ -1,6 +1,5 @@
 import os, json, asyncio
 import logging
-from contextlib import contextmanager
 from dependency_injector.wiring import Provide, inject
 from pydantic import BaseModel, Field
 from typing import Optional, List, Literal
@@ -10,9 +9,13 @@ from fastapi.responses import StreamingResponse
 from fastapi import BackgroundTasks
 from .logger import log_training_data
 from core.redis_db import r
-from core.fastapi.logging_config import SensitiveDataFilter
+from core.context import get_request_id
+from app.logging_config import SensitiveDataFilter
+from app.utils.log_handlers import session_logger_with_task
 
 event_router = APIRouter(prefix="/event", tags=["Event"])
+
+server_logger = logging.getLogger(config.CENTRAL_LOGGER_NAME)
 
 class ReplyMetadata(BaseModel):
     label: str = Field(..., description="The UI label, e.g., 'Agree', or 'Custom'")
@@ -25,47 +28,9 @@ class ReplyRequest(BaseModel):
     card_id: str
     meta: ReplyMetadata
 
-async def _send_log_task(log_path: str):
-    """
-    Reads the completed log file and processes/sends it.
-    """
-    print(f"Background Task: Processing log file at {log_path}...")
-
-@contextmanager
-def session_logger_with_task(background_tasks: BackgroundTasks, log_path: str):
-    """
-    Context manager to handle session-specific logging setup/teardown.
-    NOW WITH SENSITIVE DATA FILTERING!
-    """
-    log_dir = os.path.dirname(log_path)
-    
-    if log_dir and not os.path.exists(log_dir):
-        os.makedirs(log_dir, exist_ok=True)
-
-    handler = logging.FileHandler(log_path)
-    sess_formatter = logging.Formatter(config.SESS_LOG_FORMAT)
-    handler.setFormatter(sess_formatter)
-    handler.setLevel(logging.DEBUG)
-    
-    handler.addFilter(SensitiveDataFilter()) 
-
-    sess_logger = logging.getLogger(config.SESSION_LOGGER_NAME)
-    sess_logger.setLevel(logging.DEBUG)
-    sess_logger.addHandler(handler)
-    
-    sess_logger.propagate = False 
-
-    try:
-        yield sess_logger
-    finally:
-        sess_logger.removeHandler(handler)
-        handler.close()
-        
-        background_tasks.add_task(_send_log_task, log_path)
-
 @event_router.post("/reply")
 async def send_reply(req: ReplyRequest, background_tasks: BackgroundTasks):
-    with session_logger_with_task(background_tasks, config.SESSION_LOG_FILE_PATH) as logger:
+    with session_logger_with_task(background_tasks) as logger:
         command = {
             "action": "reply",
             "chat_id": req.chat_id,
@@ -101,15 +66,11 @@ async def send_reply(req: ReplyRequest, background_tasks: BackgroundTasks):
 
 @event_router.get("/notifications")
 async def get_notifications(background_tasks: BackgroundTasks):
-
-    with session_logger_with_task(background_tasks, config.SESSION_LOG_FILE_PATH) as logger:
-        # HGETALL returns a dict: {'uuid1': 'json1', 'uuid2': 'json2'}
+    with session_logger_with_task(background_tasks) as logger:
         all_items = await r.hgetall("dashboard:items")
         
-        # Convert to a clean list of objects
         parsed_list = [json.loads(val) for val in all_items.values()]
         
-        # Sort by timestamp (newest first)
         parsed_list.sort(key=lambda x: x['timestamp'], reverse=True)
 
         logger.info(f"Retrieved {len(parsed_list)} notifications.")
@@ -120,6 +81,10 @@ async def get_notifications(background_tasks: BackgroundTasks):
 # 2. LIVE STREAM: Listen for NEW updates
 @event_router.get("/stream")
 async def stream_events(request: Request):
+
+    req_id = get_request_id()
+    server_logger.info(f"Stream Connected for user {request.client.host}")
+
     async def event_generator():
         # Create a PubSub listener
         pubsub = r.pubsub()
@@ -133,15 +98,19 @@ async def stream_events(request: Request):
                     yield f"data: {payload}\n\n"
                     print('Sent stream')
         except asyncio.CancelledError:
+            server_logger.info(f"Stream Disconnected for ID: {req_id}")
             await pubsub.unsubscribe("dashboard:events")
+        except Exception as e:
+            server_logger.error(f"Stream Error for ID {req_id}: {e}")
+            raise
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 # 3. ACTION TAKEN: Delete the item
 @event_router.delete("/notifications/{card_id}")
-async def delete_notification(card_id: str):
+async def delete_notification(card_id: str, background_tasks: BackgroundTasks):
 
-    with session_logger_with_task(background_tasks, config.SESSION_LOG_FILE_PATH) as logger:
+    with session_logger_with_task(background_tasks) as logger:
         raw_json = await r.hget("dashboard:items", card_id)
         
         if raw_json:

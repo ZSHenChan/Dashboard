@@ -23,13 +23,14 @@ class ServerSettings(BaseSettings):
     MONGODB_URL: str = 'MONGODB_URL'
     MONGODB_AGENT: str = 'tele_agent_db'
     MONGODB_LOGS: str = 'training_logs'
+    SENTRY_DSN: str = 'https://YOUR_SENTRY_URL.ingest.us.sentry.io/SOME_NUMBERS_HERE'
 
 class LoggingSettings(BaseSettings):
-    CENTRAL_LOG_FILE_NAME: str = "central.log"
-    CENTRAL_LOG_FILE_PATH: str = "central_logs/"
+    CENTRAL_LOG_FILE_NAME: str = "server.log"
+    CENTRAL_LOG_FILE_PATH: str = "server_logs"
+    CENTRAL_LOGGER_NAME: str = "server_logger"
     SESSION_LOGGER_NAME: str = "session"
-    SESSION_LOG_FILE_NAME: str = "session.log"
-    SESSION_LOG_FILE_PATH: str = "session_logs/session.log"
+    SESSION_LOG_FILE_PATH: str = "session_logs"
     SESS_LOG_FORMAT: str = "%(asctime)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s"
 
 class BaseConfig(

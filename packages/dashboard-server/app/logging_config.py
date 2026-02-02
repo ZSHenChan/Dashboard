@@ -1,9 +1,14 @@
-# logger_config.py
 import logging
 import logging.config
 import re
+from core.config import config
+from core.context import get_request_id
 
-# 1. Define the Filter Class FIRST
+class RequestIDFilter(logging.Filter):
+    def filter(self, record):
+        record.request_id = get_request_id()
+        return True
+
 class SensitiveDataFilter(logging.Filter):
     SENSITIVE_KEYS = (
         "credentials", "authorization", "token", "password", "access_token",
@@ -37,8 +42,6 @@ class SensitiveDataFilter(logging.Filter):
             message = re.sub(self.TOKEN_PATTERN, replace, message)
         return message
 
-# 2. Define the Config Dictionary SECOND
-# This references the class defined above
 LOGGING_CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -47,10 +50,13 @@ LOGGING_CONFIG = {
             "()": "uvicorn.logging.DefaultFormatter",
             "fmt": "[%(levelname)s] - %(asctime)s - %(name)s - %(message)s",
         },
+        "standard": {
+        "fmt": "[%(asctime)s] [%(request_id)s] %(message)s",
+        },
     },
     "filters": {
+        "request_id": {"()": RequestIDFilter},
         "sensitive_data_filter": {
-            # We reference the class directly here
             "()": SensitiveDataFilter, 
         }
     },
@@ -60,20 +66,20 @@ LOGGING_CONFIG = {
             "formatter": "default",
             "level": "DEBUG",
             "stream": "ext://sys.stdout",
-            "filters": ["sensitive_data_filter"],
+            "filters": ["request_id","sensitive_data_filter"],
         },
         "file": {
-            "formatter": "default",
+            "formatter": "standard",
             "class": "logging.handlers.RotatingFileHandler",
-            "level": "DEBUG",
-            "filename": "my_log.log",
-            "mode": "a",
-            # Add filters here if you want the file masked too
-            "filters": ["sensitive_data_filter"], 
+            "filename": f'{config.CENTRAL_LOG_FILE_PATH}/{config.CENTRAL_LOG_FILE_NAME}',
+            "maxBytes": 10 * 1024 * 1024,
+            "backupCount": 5,            
+            "level": "INFO",
+            "filters": ["request_id", "sensitive_data_filter"],
         },
     },
     "loggers": {
-        "my_customer_logger": {
+        config.CENTRAL_LOGGER_NAME: {
             "handlers": ["file", "console"],
             "level": "DEBUG",
             "propagate": False,

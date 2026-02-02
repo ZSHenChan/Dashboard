@@ -5,7 +5,6 @@ import uvicorn
 
 from core.config import config
 
-
 @click.command()
 @click.option(
     "--env",

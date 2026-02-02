@@ -1,10 +1,12 @@
 from .authentication import AuthenticationMiddleware, AuthBackend
-from .response_log import ResponseLogMiddleware
 from .sqlalchemy import SQLAlchemyMiddleware
+from .request_id import RequestIDMiddleware
+from .access_log import AccessLogMiddleware
 
 __all__ = [
     "AuthenticationMiddleware",
     "AuthBackend",
     "SQLAlchemyMiddleware",
-    "ResponseLogMiddleware",
+    "RequestIDMiddleware",
+    "AccessLogMiddleware"
 ]
