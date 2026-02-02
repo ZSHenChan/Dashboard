@@ -37,39 +37,34 @@ def session_logger_with_task(background_tasks: BackgroundTasks, log_path: str):
     Context manager to handle session-specific logging setup/teardown.
     NOW WITH SENSITIVE DATA FILTERING!
     """
-    # 1. Setup the File Handler (Dynamic File)
+    log_dir = os.path.dirname(log_path)
+    
+    if log_dir and not os.path.exists(log_dir):
+        os.makedirs(log_dir, exist_ok=True)
+
     handler = logging.FileHandler(log_path)
     sess_formatter = logging.Formatter(config.SESS_LOG_FORMAT)
     handler.setFormatter(sess_formatter)
     handler.setLevel(logging.DEBUG)
     
-    # --- UPGRADE: Add the Sensitive Filter to this specific handler ---
-    # This ensures the uploaded file has secrets masked too.
     handler.addFilter(SensitiveDataFilter()) 
 
-    # 2. Get the Logger
     sess_logger = logging.getLogger(config.SESSION_LOGGER_NAME)
     sess_logger.setLevel(logging.DEBUG)
     sess_logger.addHandler(handler)
     
-    # 3. Stop Propagation
-    # Crucial: This stops these logs from leaking into your main 'my_customer_logger'
-    # or the console. It keeps this session strictly private to this file.
     sess_logger.propagate = False 
 
     try:
         yield sess_logger
     finally:
-        # --- TEARDOWN ---
         sess_logger.removeHandler(handler)
-        handler.close() # Close file so it can be read by the task below
+        handler.close()
         
-        # 4. Queue the background task
         background_tasks.add_task(_send_log_task, log_path)
 
 @event_router.post("/reply")
 async def send_reply(req: ReplyRequest, background_tasks: BackgroundTasks):
-    # 1. Construct the Command Payload
     with session_logger_with_task(background_tasks, config.SESSION_LOG_FILE_PATH) as logger:
         command = {
             "action": "reply",
