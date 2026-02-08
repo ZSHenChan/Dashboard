@@ -5,6 +5,7 @@ import { PromptConfigSidebar } from "./prompt-config-sidebar";
 import { PromptConfig } from "./prompt-types";
 import { PromptOutput } from "./modal-textarea";
 import { PromptInputArea } from "./input";
+import toast from "react-hot-toast";
 
 export function PromptRunnerModal({
   prompt,
@@ -13,7 +14,7 @@ export function PromptRunnerModal({
 }: {
   prompt: PromptConfig;
   onClose: () => void;
-  onSaveSuccess?: () => void;
+  onSaveSuccess?: (prompt: PromptConfig, update: boolean) => void;
 }) {
   // 1. Consolidated Config State
   const [config, setConfig] = useState<PromptConfig>({
@@ -28,9 +29,7 @@ export function PromptRunnerModal({
   });
 
   // 2. UI State
-  const [isSidebarOpen, setIsSidebarOpen] = useState(
-    prompt.id === "new" ? true : false,
-  );
+  const [isSidebarOpen, setIsSidebarOpen] = useState(prompt.id === "new" ? true : false);
 
   // Execution State
   const [userInput, setUserInput] = useState("");
@@ -52,8 +51,7 @@ export function PromptRunnerModal({
 
   const handleDelete = async () => {
     // 1. Safety Check
-    if (!confirm("Are you sure you want to delete this prompt template?"))
-      return;
+    if (!confirm("Are you sure you want to delete this prompt template?")) return;
 
     setIsDeleting(true);
     try {
@@ -64,7 +62,7 @@ export function PromptRunnerModal({
       if (!res.ok) throw new Error("Failed to delete");
 
       // 2. Refresh & Close
-      if (onSaveSuccess) onSaveSuccess();
+      if (onSaveSuccess) onSaveSuccess(config, false);
       onClose();
     } catch (error) {
       console.error(error);
@@ -88,26 +86,31 @@ export function PromptRunnerModal({
     setIsSaving(true);
     try {
       const method = prompt.id === "new" ? "POST" : "PUT"; // POST for new, PUT for update
-      const url =
-        prompt.id === "new" ? "/api/prompts" : `/api/prompts/${prompt.id}`;
+      const url = prompt.id === "new" ? "/api/prompts" : `/api/prompts/${prompt.id}`;
 
-      const res = await fetch(url, {
-        method: method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: config.title,
-          summary: config.summary,
-          systemPrompt: config.systemPrompt,
-          addSysPrompt: config.addSysPrompt,
-          model: config.model,
-          inputs: config.inputs,
-          persistInputs: config.persistInputs,
+      const res = await toast.promise(
+        fetch(url, {
+          method: method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: config.title,
+            summary: config.summary,
+            systemPrompt: config.systemPrompt,
+            addSysPrompt: config.addSysPrompt,
+            model: config.model,
+            inputs: config.inputs,
+            persistInputs: config.persistInputs,
+          }),
         }),
-      });
+        {
+          loading: "Saving prompt configurations...",
+          success: "Prompt Configuration Saved!",
+          error: "Failed. Please try again later.",
+        },
+      );
 
       if (!res.ok) throw new Error("Failed to save");
-
-      if (onSaveSuccess) onSaveSuccess();
+      if (onSaveSuccess) onSaveSuccess(config, true);
     } catch (error) {
       console.error(error);
       alert("Error saving template");
@@ -123,8 +126,7 @@ export function PromptRunnerModal({
     setResponse("");
 
     const finalSysPrompt =
-      config.systemPrompt +
-      `\nAdditionally, in your response:\n-${config.addSysPrompt.join("\n-")}`;
+      config.systemPrompt + `\nAdditionally, in your response:\n-${config.addSysPrompt.join("\n-")}`;
 
     try {
       const res = await fetch("/api/generate", {
@@ -201,11 +203,7 @@ export function PromptRunnerModal({
                 className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/20 transition mr-2"
                 title="Delete Prompt"
               >
-                {isDeleting ? (
-                  <Loader2 size={18} className="animate-spin" />
-                ) : (
-                  <Trash2 size={18} />
-                )}
+                {isDeleting ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
               </button>
             )}
 
@@ -215,20 +213,13 @@ export function PromptRunnerModal({
               // ... (rest of save button code)
               className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-green-600 hover:bg-green-500 text-white font-semibold text-sm transition disabled:opacity-50"
             >
-              {isSaving ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Save size={16} />
-              )}
+              {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
               {prompt.id === "new" ? "Create & Save" : "Update"}
             </button>
 
             <div className="h-6 w-px bg-white/20 mx-2" />
 
-            <button
-              onClick={onClose}
-              className="text-white/50 hover:text-white transition"
-            >
+            <button onClick={onClose} className="text-white/50 hover:text-white transition">
               <X size={24} />
             </button>
           </div>
@@ -257,7 +248,7 @@ export function PromptRunnerModal({
               onImageSelect={setSelectedImage}
               onRun={handleRun}
               isLoading={isLoading}
-              supportedInputs={prompt.inputs}
+              supportedInputs={config.inputs}
             />
           </div>
         </div>

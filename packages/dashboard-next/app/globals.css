@@ -4,6 +4,19 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  --toast-backdrop: blur(10px);
+  --toast-bg: #64748b51;
+  --toast-text: #e2e8f0;
+
+  --toast-loading-bg: #64748b51;
+  --toast-loading-text: #e2e8f0;
+
+  /* --toast-success-bg: #34d399; */
+  --toast-success-text: #34d399;
+
+  /* --toast-error-bg: #ef4444; */
+  --toast-error-text: #ef4444;
 }
 
 @theme inline {

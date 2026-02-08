@@ -23,8 +23,7 @@ const DEMO_PROMPTS: PromptConfig[] = [
   {
     id: "demo_3314",
     title: "Demo Prompt: Tailor Resume",
-    summary:
-      "Personal coach to customize your resume based on job role description",
+    summary: "Personal coach to customize your resume based on job role description",
     inputs: ["text", "file"],
     systemPrompt: `I am going to upload my resume and list out the job description posted by a company. I need you to:
 
@@ -53,9 +52,7 @@ const EMPTY_TEMPLATE: PromptConfig = {
 // --- Main Component ---
 
 export function PromptLibrary() {
-  const [selectedPrompt, setSelectedPrompt] = useState<PromptConfig | null>(
-    null,
-  );
+  const [selectedPrompt, setSelectedPrompt] = useState<PromptConfig | null>(null);
   const [prompts, setPrompts] = useState<PromptConfig[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -79,6 +76,11 @@ export function PromptLibrary() {
     loadPrompts();
   };
 
+  const updatePromptsLocally = (prompt: PromptConfig, update: boolean) => {
+    if (update) setPrompts((prev) => [prompt, ...prev.filter((p) => p.id != prompt.id)]);
+    else setPrompts((prev) => [...prev.filter((p) => p.id != prompt.id)]);
+  };
+
   useEffect(() => {
     loadPrompts();
   }, []);
@@ -86,10 +88,7 @@ export function PromptLibrary() {
   // Filter Logic
   const filteredPrompts = prompts.filter((prompt) => {
     const query = searchQuery.toLowerCase();
-    return (
-      prompt.title.toLowerCase().includes(query) ||
-      prompt.summary.toLowerCase().includes(query)
-    );
+    return prompt.title.toLowerCase().includes(query) || prompt.summary.toLowerCase().includes(query);
   });
 
   const handleCreateNew = () => {
@@ -113,12 +112,9 @@ export function PromptLibrary() {
           <Box size={48} className="text-white/40" />
         </div>
 
-        <h2 className="text-3xl font-bold text-white mb-3">
-          No prompts created yet
-        </h2>
+        <h2 className="text-3xl font-bold text-white mb-3">No prompts created yet</h2>
         <p className="text-white/60 max-w-md mb-8 leading-relaxed">
-          Your library is empty. Create your first reusable prompt template to
-          start streamlining your AI workflow.
+          Your library is empty. Create your first reusable prompt template to start streamlining your AI workflow.
         </p>
 
         <button
@@ -129,12 +125,7 @@ export function PromptLibrary() {
         </button>
 
         {/* Render Modal if they click create */}
-        {selectedPrompt && (
-          <PromptRunnerModal
-            prompt={selectedPrompt}
-            onClose={() => setSelectedPrompt(null)}
-          />
-        )}
+        {selectedPrompt && <PromptRunnerModal prompt={selectedPrompt} onClose={() => setSelectedPrompt(null)} />}
       </div>
     );
   }
@@ -181,11 +172,7 @@ export function PromptLibrary() {
                 {/* Input Type Badges */}
                 <div className="flex gap-1.5">
                   {prompt.inputs.map((type) => (
-                    <div
-                      key={type}
-                      className="p-1.5 rounded-md bg-black/20 text-white/70"
-                      title={`Supports ${type}`}
-                    >
+                    <div key={type} className="p-1.5 rounded-md bg-black/20 text-white/70" title={`Supports ${type}`}>
                       {type === "text" && <FileText size={14} />}
                       {type === "image" && <ImageIcon size={14} />}
                       {type === "audio" && <Mic size={14} />}
@@ -199,9 +186,7 @@ export function PromptLibrary() {
               <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-200 transition-colors">
                 {prompt.title}
               </h3>
-              <p className="text-sm text-white/70 leading-relaxed">
-                {prompt.summary}
-              </p>
+              <p className="text-sm text-white/70 leading-relaxed">{prompt.summary}</p>
 
               {/* Hover Action Indicator */}
               <div className="mt-auto pt-6 flex items-center text-xs font-bold uppercase tracking-widest text-white/40 group-hover:text-white/90 transition-colors">
@@ -214,9 +199,7 @@ export function PromptLibrary() {
         // Empty State
         <div className="flex flex-col items-center justify-center py-20 text-white/40">
           <Search size={48} className="mb-4 opacity-50" />
-          <p className="text-lg font-medium">
-            No prompts found matching &quot;{searchQuery}&quot;
-          </p>
+          <p className="text-lg font-medium">No prompts found matching &quot;{searchQuery}&quot;</p>
           <button
             onClick={() => setSearchQuery("")}
             className="mt-4 text-sm text-blue-300 hover:text-blue-200 underline"
@@ -231,7 +214,7 @@ export function PromptLibrary() {
         <PromptRunnerModal
           prompt={selectedPrompt}
           onClose={() => setSelectedPrompt(null)}
-          onSaveSuccess={fetchPrompts}
+          onSaveSuccess={updatePromptsLocally}
         />
       )}
     </div>
