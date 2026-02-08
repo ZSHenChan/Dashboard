@@ -5,22 +5,26 @@ const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
 export async function POST(req: Request) {
   try {
-    const { systemPrompt, userPrompt, model, config, image } = await req.json();
+    const { systemPrompt, userPrompt, model, config, file } = await req.json();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const parts: any[] = [{ text: userPrompt }];
 
-    if (image) {
-      // image.data should be the raw base64 string (without "data:image/png;base64," prefix)
-      parts.push({
-        inlineData: {
-          mimeType: image.mimeType,
-          data: image.data,
-        },
-      });
+    if (file) {
+      if (file.mimeType.startsWith("image/")) {
+        // CASE A: Image -> Send as Base64 inlineData
+        parts.push({
+          inlineData: {
+            mimeType: file.mimeType,
+            data: file.data, // This must be the Base64 string
+          },
+        });
+      } else {
+        parts.push({
+          text: `Here is the content of the file "${file.name}":\n\n${file.data}`,
+        });
+      }
     }
-    // 1. Initialize the stream
-    // Note: We use generateContentStream instead of generateContent
     const streamResult = await ai.models.generateContentStream({
       model: model || "gemini-3-pro-preview",
       config: {
@@ -63,11 +67,8 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("API Error:", error);
-    return new Response(
-      JSON.stringify({ error: "Failed to generate content" }),
-      {
-        status: 500,
-      },
-    );
+    return new Response(JSON.stringify({ error: "Failed to generate content" }), {
+      status: 500,
+    });
   }
 }

@@ -1,11 +1,13 @@
 "use client";
 import { useState } from "react";
-import { X, Loader2, Save, Trash2 } from "lucide-react";
+import { X, Loader2, Save, Trash2, Copy } from "lucide-react";
 import { PromptConfigSidebar } from "./prompt-config-sidebar";
 import { PromptConfig } from "./prompt-types";
 import { PromptOutput } from "./modal-textarea";
 import { PromptInputArea } from "./input";
 import toast from "react-hot-toast";
+import { FileData } from "@/app/interfaces/prompt-lib";
+import { stripMarkdown } from "../utils";
 
 export function PromptRunnerModal({
   prompt,
@@ -33,17 +35,26 @@ export function PromptRunnerModal({
 
   // Execution State
   const [userInput, setUserInput] = useState("");
-  const [selectedImage, setSelectedImage] = useState<{
-    data: string;
-    mimeType: string;
-    preview: string;
-  } | null>(null);
+  const [selectedFile, setSelectedFile] = useState<FileData | null>(null);
   const [response, setResponse] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   // Saving State
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleCopyClean = async () => {
+    if (!response) return;
+
+    const cleanText = stripMarkdown(response);
+
+    try {
+      await navigator.clipboard.writeText(cleanText);
+      toast.success("Reponse Copied!");
+    } catch (err) {
+      toast.success(`Failed to copy text: ${err}`);
+    }
+  };
 
   const handleConfigChange = (key: keyof PromptConfig, value: any) => {
     setConfig((prev) => ({ ...prev, [key]: value }));
@@ -136,10 +147,10 @@ export function PromptRunnerModal({
           model: config.model,
           systemPrompt: finalSysPrompt,
           userPrompt: userInput,
-          image: selectedImage
+          file: selectedFile
             ? {
-                data: selectedImage.data,
-                mimeType: selectedImage.mimeType,
+                data: selectedFile.data,
+                mimeType: selectedFile.mimeType,
               }
             : undefined,
           config: {
@@ -153,7 +164,7 @@ export function PromptRunnerModal({
 
       // --- STREAMING LOGIC START ---
       if (!config.persistInputs.includes("text")) setUserInput("");
-      if (!config.persistInputs.includes("file")) setSelectedImage(null);
+      if (!config.persistInputs.includes("file")) setSelectedFile(null);
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let done = false;
@@ -195,6 +206,16 @@ export function PromptRunnerModal({
           </h3>
 
           <div className="flex items-center gap-2">
+            {response && (
+              <button
+                onClick={handleCopyClean}
+                className="p-2 rounded-lg bg-black/50 hover:bg-black/70 text-white/70 hover:text-white border border-white/10 backdrop-blur-md transition-all duration-200"
+                title="Copy as clean text"
+              >
+                {<Copy size={18} />}
+              </button>
+            )}
+
             {/* DELETE BUTTON (Only show if it's an existing prompt) */}
             {prompt.id !== "new" && (
               <button
@@ -244,8 +265,8 @@ export function PromptRunnerModal({
             <PromptInputArea
               value={userInput}
               onChange={setUserInput}
-              selectedImage={selectedImage}
-              onImageSelect={setSelectedImage}
+              selectedFile={selectedFile}
+              onFileSelect={setSelectedFile}
               onRun={handleRun}
               isLoading={isLoading}
               supportedInputs={config.inputs}

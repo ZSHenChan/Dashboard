@@ -1,23 +1,15 @@
 "use client";
 
 import { useRef } from "react";
-import { Image as ImageIcon, X, Play } from "lucide-react";
+import { Image as ImageIcon, X, Play, FileIcon } from "lucide-react";
+import { FileData } from "@/app/interfaces/prompt-lib";
+import mammoth from "mammoth";
 
 interface PromptInputAreaProps {
   value: string;
   onChange: (value: string) => void;
-  selectedImage: {
-    data: string;
-    mimeType: string;
-    preview: string;
-  } | null;
-  onImageSelect: (
-    image: {
-      data: string;
-      mimeType: string;
-      preview: string;
-    } | null,
-  ) => void;
+  selectedFile: FileData | null;
+  onFileSelect: (image: FileData | null) => void;
   onRun: () => void;
   isLoading: boolean;
   supportedInputs: string[];
@@ -26,8 +18,8 @@ interface PromptInputAreaProps {
 export function PromptInputArea({
   value,
   onChange,
-  selectedImage,
-  onImageSelect,
+  selectedFile,
+  onFileSelect,
   onRun,
   isLoading,
   supportedInputs,
@@ -51,6 +43,42 @@ export function PromptInputArea({
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type.startsWith("image/")) return;
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const arrayBuffer = reader.result as ArrayBuffer;
+      if (
+        file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+        file.name.endsWith(".docx")
+      ) {
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        const extractedText = result.value;
+
+        onFileSelect({
+          name: file.name,
+          mimeType: "text/plain",
+          data: extractedText,
+          preview: "",
+        });
+      } else {
+        const base64String = reader.result as string;
+        const base64Data = base64String.split(",")[1];
+
+        onFileSelect({
+          name: file.name,
+          data: base64Data,
+          mimeType: file.type,
+          preview: "",
+        });
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -61,7 +89,8 @@ export function PromptInputArea({
       // Strip metadata prefix for API compatibility
       const base64Data = base64String.split(",")[1];
 
-      onImageSelect({
+      onFileSelect({
+        name: file.name,
         data: base64Data,
         mimeType: file.type,
         preview: base64String,
@@ -70,8 +99,8 @@ export function PromptInputArea({
     reader.readAsDataURL(file);
   };
 
-  const handleClearImage = () => {
-    onImageSelect(null);
+  const handleClearFile = () => {
+    onFileSelect(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -79,18 +108,10 @@ export function PromptInputArea({
     <div className="p-4 bg-black/20">
       <div className="relative">
         {/* Image Preview - check 'image' support as per original code */}
-        {supportedInputs.includes("image") && selectedImage && (
-          <div className="absolute bottom-16 left-0 mb-2 flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-2 rounded-lg border border-white/20 animate-in slide-in-from-bottom-2">
-            <img
-              src={selectedImage.preview}
-              alt="Upload preview"
-              className="w-8 h-8 rounded object-cover border border-white/30"
-            />
-            <span className="text-xs text-white/80">Image attached</span>
-            <button
-              onClick={handleClearImage}
-              className="ml-2 hover:text-red-400 text-white/50 transition"
-            >
+        {selectedFile && (
+          <div className="absolute bottom-2 left-2 mb-2 flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1 rounded-[200px] border border-white/20 animate-in slide-in-from-bottom-2">
+            <span className="text-xs text-white/80">{selectedFile.name}</span>
+            <button onClick={handleClearFile} className="ml-2 hover:text-red-400 text-white/50 transition">
               <X size={14} />
             </button>
           </div>
@@ -114,13 +135,30 @@ export function PromptInputArea({
                 type="file"
                 ref={fileInputRef}
                 className="hidden"
-                accept="image/*"
-                onChange={handleImageUpload}
+                accept=".pdf,.doc,.docx"
+                onChange={handleFileUpload}
               />
               <button
                 onClick={() => fileInputRef.current?.click()}
                 className={`p-2 rounded-lg transition ${
-                  selectedImage
+                  selectedFile
+                    ? "bg-blue-500/20 text-blue-300 ring-1 ring-blue-500/50"
+                    : "bg-white/10 hover:bg-white/20 text-white/70 hover:text-white"
+                }`}
+                title="Upload Image"
+              >
+                <FileIcon size={18} />
+              </button>
+            </>
+          )}
+
+          {supportedInputs.includes("image") && (
+            <>
+              <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className={`p-2 rounded-lg transition ${
+                  selectedFile
                     ? "bg-blue-500/20 text-blue-300 ring-1 ring-blue-500/50"
                     : "bg-white/10 hover:bg-white/20 text-white/70 hover:text-white"
                 }`}
@@ -136,8 +174,7 @@ export function PromptInputArea({
             disabled={isLoading || !value.trim()}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? "Running..." : "Run"}{" "}
-            <Play size={14} fill="currentColor" />
+            {isLoading ? "Running..." : "Run"} <Play size={14} fill="currentColor" />
           </button>
         </div>
       </div>
