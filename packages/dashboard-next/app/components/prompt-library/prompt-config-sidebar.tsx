@@ -1,17 +1,7 @@
 "use client";
-import {
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  File,
-  FileText,
-  HelpCircle,
-  ImageIcon,
-  Mic,
-  Pin,
-  Settings2,
-} from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, File, FileText, HelpCircle, ImageIcon, Pin, Settings2 } from "lucide-react";
 import { InputType, PromptConfig } from "./prompt-types";
+import { ThinkingLevel } from "@google/genai";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -20,16 +10,40 @@ interface SidebarProps {
   onChange: (key: keyof PromptConfig, value: any) => void;
 }
 
+export const THINKING_LEVEL_LABELS: Record<ThinkingLevel, string> = {
+  [ThinkingLevel.MINIMAL]: "Minimal",
+  [ThinkingLevel.LOW]: "Low",
+  [ThinkingLevel.MEDIUM]: "Medium",
+  [ThinkingLevel.HIGH]: "High",
+  [ThinkingLevel.THINKING_LEVEL_UNSPECIFIED]: "Default",
+};
+
 interface GEMINI_MODEL_TEMPLATE {
-  name: string;
-  model: string;
+  id: string;
+  label: string;
+  supportedThinkingLevels?: ThinkingLevel[];
+  defaultThinkingLevel: ThinkingLevel;
 }
 
-export const AVAILABLE_MODEL: GEMINI_MODEL_TEMPLATE[] = [
-  { name: "Gemini 3 Pro Preview", model: "gemini-3-pro-preview" },
-  { name: "Gemini 3 Flash Preview", model: "gemini-3-flash-preview" },
-  { name: "Gemini 2.5 Pro", model: "gemini-2.5-pro" },
-  { name: "Gemini 2.5 Flash", model: "gemini-2.5-flash" },
+export const AVAILABLE_MODELS: GEMINI_MODEL_TEMPLATE[] = [
+  {
+    id: "Gemini 3.1 Pro Preview",
+    label: "gemini-3.1-pro-preview",
+    supportedThinkingLevels: [ThinkingLevel.LOW, ThinkingLevel.MEDIUM, ThinkingLevel.HIGH],
+    defaultThinkingLevel: ThinkingLevel.HIGH,
+  },
+  {
+    id: "Gemini 3 Pro Preview",
+    label: "gemini-3-pro-preview",
+    supportedThinkingLevels: [ThinkingLevel.LOW, ThinkingLevel.HIGH],
+    defaultThinkingLevel: ThinkingLevel.HIGH,
+  },
+  {
+    id: "Gemini 3 Flash Preview",
+    label: "gemini-3-flash-preview",
+    supportedThinkingLevels: [ThinkingLevel.MINIMAL, ThinkingLevel.LOW, ThinkingLevel.MEDIUM, ThinkingLevel.HIGH],
+    defaultThinkingLevel: ThinkingLevel.HIGH,
+  },
 ];
 
 const STYLE_OPTIONS = [
@@ -37,8 +51,7 @@ const STYLE_OPTIONS = [
     id: "skip_intro",
     label: "Skip Fluff",
     text: "Skip introduction or concluding remarks. Start directly with the data.",
-    description:
-      "Removes conversational filler like 'Here is the data you requested'.",
+    description: "Removes conversational filler like 'Here is the data you requested'.",
   },
   {
     id: "concise",
@@ -60,17 +73,10 @@ const STYLE_OPTIONS = [
   },
 ];
 
-export function PromptConfigSidebar({
-  isOpen,
-  onToggle,
-  config,
-  onChange,
-}: SidebarProps) {
+export function PromptConfigSidebar({ isOpen, onToggle, config, onChange }: SidebarProps) {
   const toggleInput = (type: InputType) => {
     const current = config.inputs;
-    const updated = current.includes(type)
-      ? current.filter((t) => t !== type)
-      : [...current, type];
+    const updated = current.includes(type) ? current.filter((t) => t !== type) : [...current, type];
     onChange("inputs", updated);
   };
 
@@ -95,6 +101,9 @@ export function PromptConfigSidebar({
     }
   };
 
+  const selectedModelDef = AVAILABLE_MODELS.find((m) => m.label === config.model);
+  const supportedThinkingLevels = selectedModelDef?.supportedThinkingLevels ?? [];
+
   return (
     <div
       className={`relative border-r border-white/10 bg-black/20 flex flex-col transition-all duration-300 ease-in-out ${
@@ -116,15 +125,9 @@ export function PromptConfigSidebar({
           <Settings2 size={20} className="text-white" />
           <div className="h-px w-4 bg-white/20" />
           {/* Mini indicators of what inputs are enabled */}
-          {config.inputs.includes("text") && (
-            <FileText size={16} className="text-blue-400" />
-          )}
-          {config.inputs.includes("image") && (
-            <ImageIcon size={16} className="text-purple-400" />
-          )}
-          {config.inputs.includes("file") && (
-            <File size={16} className="text-orange-400" />
-          )}
+          {config.inputs.includes("text") && <FileText size={16} className="text-blue-400" />}
+          {config.inputs.includes("image") && <ImageIcon size={16} className="text-purple-400" />}
+          {config.inputs.includes("file") && <File size={16} className="text-orange-400" />}
         </div>
       )}
 
@@ -134,9 +137,7 @@ export function PromptConfigSidebar({
       >
         {/* Title Input */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-2">
-            Title
-          </label>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-2">Title</label>
           <input
             type="text"
             value={config.title}
@@ -148,9 +149,7 @@ export function PromptConfigSidebar({
 
         {/* Summary Input */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-2">
-            Summary
-          </label>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-2">Summary</label>
           <textarea
             value={config.summary}
             onChange={(e) => onChange("summary", e.target.value)}
@@ -204,36 +203,21 @@ export function PromptConfigSidebar({
             <InputToggle
               label="Keep Text"
               // Rotate pin slightly when active for visual flair
-              icon={
-                <Pin
-                  size={14}
-                  className={
-                    config.persistInputs?.includes("text") ? "rotate-45" : ""
-                  }
-                />
-              }
+              icon={<Pin size={14} className={config.persistInputs?.includes("text") ? "rotate-45" : ""} />}
               active={config.persistInputs?.includes("text")}
               onClick={() => togglePersistence("text")}
               color="green"
             />
             <InputToggle
               label="Keep File"
-              icon={
-                <Pin
-                  size={14}
-                  className={
-                    config.persistInputs?.includes("file") ? "rotate-45" : ""
-                  }
-                />
-              }
+              icon={<Pin size={14} className={config.persistInputs?.includes("file") ? "rotate-45" : ""} />}
               active={config.persistInputs?.includes("file")}
               onClick={() => togglePersistence("file")}
               color="green"
             />
           </div>
           <p className="text-[10px] text-white/30 mt-2 leading-tight">
-            Enable these to prevent the input fields from clearing after you
-            click Run.
+            Enable these to prevent the input fields from clearing after you click Run.
           </p>
         </div>
 
@@ -252,9 +236,7 @@ export function PromptConfigSidebar({
                 <div
                   key={option.id}
                   className={`flex items-start gap-3 p-2 rounded-lg border transition-all cursor-pointer group ${
-                    isChecked
-                      ? "bg-blue-500/10 border-blue-500/30"
-                      : "bg-black/20 border-white/5 hover:border-white/10"
+                    isChecked ? "bg-blue-500/10 border-blue-500/30" : "bg-black/20 border-white/5 hover:border-white/10"
                   }`}
                   onClick={() => toggleStyleOption(option.text)}
                 >
@@ -271,9 +253,7 @@ export function PromptConfigSidebar({
 
                   <div className="flex-1">
                     <div className="flex items-center gap-1.5">
-                      <span
-                        className={`text-sm font-medium ${isChecked ? "text-blue-200" : "text-white/80"}`}
-                      >
+                      <span className={`text-sm font-medium ${isChecked ? "text-blue-200" : "text-white/80"}`}>
                         {option.label}
                       </span>
 
@@ -285,9 +265,7 @@ export function PromptConfigSidebar({
                         />
                         {/* Hover tooltip content */}
                         <div className="absolute left-6 top-1/2 -translate-y-1/2 w-48 p-2 bg-zinc-900 border border-white/20 rounded text-xs text-white/80 shadow-xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all z-50 pointer-events-none">
-                          <p className="italic opacity-70">
-                            {option.description}
-                          </p>
+                          <p className="italic opacity-70">{option.description}</p>
                         </div>
                       </div>
                     </div>
@@ -313,21 +291,42 @@ export function PromptConfigSidebar({
 
         {/* Model Config */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-2">
-            Model
-          </label>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-white/50 mb-2">Model</label>
           <select
             value={config.model}
             onChange={(e) => onChange("model", e.target.value)}
             className="w-full bg-black/30 border border-white/10 rounded-lg p-2 text-sm text-white focus:outline-none"
           >
-            {AVAILABLE_MODEL.map((model) => (
-              <option key={model.model} value={model.model}>
-                {model.name}
+            {AVAILABLE_MODELS.map((model) => (
+              <option key={model.label} value={model.label}>
+                {model.id}
               </option>
             ))}
           </select>
         </div>
+
+        {supportedThinkingLevels.length > 0 && (
+          <div className="mb-4">
+            <label className="block text-xs font-semibold text-white/50 uppercase tracking-wider mb-2">
+              Thinking Level
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {supportedThinkingLevels.map((level) => (
+                <button
+                  key={level}
+                  onClick={() => onChange("thinkingLevel", level)}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all duration-150 ${
+                    config.thinkingLevel === level
+                      ? "bg-blue-600 border-blue-500 text-white"
+                      : "bg-black/30 border-white/10 text-white/60 hover:text-white hover:border-white/30"
+                  }`}
+                >
+                  {THINKING_LEVEL_LABELS[level]}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

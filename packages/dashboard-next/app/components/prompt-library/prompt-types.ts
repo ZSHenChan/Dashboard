@@ -1,3 +1,5 @@
+import { ThinkingLevel } from "@google/genai";
+
 export type InputType = "text" | "image" | "audio" | "file";
 
 export interface PromptConfig {
@@ -9,4 +11,12 @@ export interface PromptConfig {
   model: string;
   inputs: InputType[];
   persistInputs: ("text" | "file")[];
+  thinkingLevel: ThinkingLevel;
+}
+
+export interface FileData {
+  name: string;
+  data: string;
+  mimeType: string;
+  preview: string;
 }

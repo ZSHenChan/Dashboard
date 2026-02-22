@@ -15,7 +15,7 @@ import {
 import { PromptRunnerModal } from "./prompt-runner-modal";
 import { AddPromptCard } from "./add-prompt-card";
 import { PromptConfig } from "./prompt-types";
-import { AVAILABLE_MODEL } from "./prompt-config-sidebar";
+import { AVAILABLE_MODELS } from "./prompt-config-sidebar";
 import { Helix } from "ldrs/react";
 import "ldrs/react/Helix.css";
 
@@ -33,7 +33,7 @@ const DEMO_PROMPTS: PromptConfig[] = [
 
 3. Customize my resume to fit the job requirements and show the final result.`,
     addSysPrompt: ["skip_intro"],
-    model: AVAILABLE_MODEL[0].model,
+    model: AVAILABLE_MODELS[0].label,
     persistInputs: [],
   },
 ];
@@ -45,7 +45,7 @@ const EMPTY_TEMPLATE: PromptConfig = {
   inputs: ["text"],
   systemPrompt: "You are a helpful AI assistant.",
   addSysPrompt: [],
-  model: AVAILABLE_MODEL[0].model,
+  model: AVAILABLE_MODELS[0].label,
   persistInputs: [],
 };
 

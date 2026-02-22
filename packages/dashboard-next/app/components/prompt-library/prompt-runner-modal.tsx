@@ -2,12 +2,12 @@
 import { useState } from "react";
 import { X, Loader2, Save, Trash2, Copy } from "lucide-react";
 import { PromptConfigSidebar } from "./prompt-config-sidebar";
-import { PromptConfig } from "./prompt-types";
+import { PromptConfig, FileData } from "./prompt-types";
 import { PromptOutput } from "./modal-textarea";
 import { PromptInputArea } from "./input";
 import toast from "react-hot-toast";
-import { FileData } from "@/app/interfaces/prompt-lib";
 import { stripMarkdown } from "../utils";
+import { ThinkingLevel } from "@google/genai";
 
 export function PromptRunnerModal({
   prompt,
@@ -28,6 +28,7 @@ export function PromptRunnerModal({
     model: prompt.model,
     inputs: prompt.inputs || ["text"],
     persistInputs: prompt.persistInputs || [],
+    thinkingLevel: prompt.thinkingLevel || ThinkingLevel.THINKING_LEVEL_UNSPECIFIED,
   });
 
   // 2. UI State
@@ -56,12 +57,12 @@ export function PromptRunnerModal({
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleConfigChange = (key: keyof PromptConfig, value: any) => {
     setConfig((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleDelete = async () => {
-    // 1. Safety Check
     if (!confirm("Are you sure you want to delete this prompt template?")) return;
 
     setIsDeleting(true);
@@ -72,7 +73,6 @@ export function PromptRunnerModal({
 
       if (!res.ok) throw new Error("Failed to delete");
 
-      // 2. Refresh & Close
       if (onSaveSuccess) onSaveSuccess(config, false);
       onClose();
     } catch (error) {
@@ -111,6 +111,7 @@ export function PromptRunnerModal({
             model: config.model,
             inputs: config.inputs,
             persistInputs: config.persistInputs,
+            thinkingLevel: config.thinkingLevel,
           }),
         }),
         {
@@ -155,6 +156,9 @@ export function PromptRunnerModal({
             : undefined,
           config: {
             temperature: 0.7,
+            thinkingConfig: {
+              thinkingLevel: config.thinkingLevel,
+            },
           },
         }),
       });
@@ -176,7 +180,6 @@ export function PromptRunnerModal({
         if (value) {
           const chunk = decoder.decode(value, { stream: true });
 
-          // Update state with new chunk
           setResponse((prev) => prev + chunk);
         }
       }

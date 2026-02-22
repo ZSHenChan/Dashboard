@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { Image as ImageIcon, X, Play, FileIcon } from "lucide-react";
-import { FileData } from "@/app/interfaces/prompt-lib";
+import { FileData } from "./prompt-types";
 import mammoth from "mammoth";
 
 interface PromptInputAreaProps {
