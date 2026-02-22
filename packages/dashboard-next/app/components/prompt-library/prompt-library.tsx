@@ -18,6 +18,7 @@ import { PromptConfig } from "./prompt-types";
 import { AVAILABLE_MODELS } from "./prompt-config-sidebar";
 import { Helix } from "ldrs/react";
 import "ldrs/react/Helix.css";
+import { ThinkingLevel } from "@google/genai";
 
 const DEMO_PROMPTS: PromptConfig[] = [
   {
@@ -35,6 +36,7 @@ const DEMO_PROMPTS: PromptConfig[] = [
     addSysPrompt: ["skip_intro"],
     model: AVAILABLE_MODELS[0].label,
     persistInputs: [],
+    thinkingLevel: ThinkingLevel.THINKING_LEVEL_UNSPECIFIED,
   },
 ];
 // --- Mock Data ---
@@ -47,6 +49,7 @@ const EMPTY_TEMPLATE: PromptConfig = {
   addSysPrompt: [],
   model: AVAILABLE_MODELS[0].label,
   persistInputs: [],
+  thinkingLevel: ThinkingLevel.THINKING_LEVEL_UNSPECIFIED,
 };
 
 // --- Main Component ---
