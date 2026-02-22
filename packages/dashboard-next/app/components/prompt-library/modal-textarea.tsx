@@ -1,6 +1,9 @@
 import { Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math"; // Parses math syntax
+import rehypeKatex from "rehype-katex"; // Renders math syntax
+import "katex/dist/katex.min.css"; // Required CSS for math styling
 import { Helix } from "ldrs/react";
 import "ldrs/react/Helix.css";
 
@@ -18,28 +21,21 @@ export function PromptOutput({ isLoading, response }: PromptOutputProps) {
           <p className="mt-8">Generating content...</p>
         </div>
       ) : response ? (
-        <article className="prose prose-invert prose-md max-w-none leading-relaxed">
+        <article className="prose prose-invert prose-md max-w-none leading-relaxed ">
           <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
+            remarkPlugins={[remarkGfm, remarkMath]} // Added remarkMath here
+            rehypePlugins={[rehypeKatex]} // Added rehypeKatex here
             components={{
               // Custom Table Styling
               table: ({ children }) => (
                 <div className="overflow-x-auto my-4 border border-white/10 rounded-lg">
-                  <table className="min-w-full divide-y divide-white/10 text-sm">
-                    {children}
-                  </table>
+                  <table className="min-w-full divide-y divide-white/10 text-sm">{children}</table>
                 </div>
               ),
               th: ({ children }) => (
-                <th className="px-4 py-3 bg-white/5 text-left font-semibold text-white">
-                  {children}
-                </th>
+                <th className="px-4 py-3 bg-white/5 text-left font-semibold text-white">{children}</th>
               ),
-              td: ({ children }) => (
-                <td className="px-4 py-3 border-t border-white/5 text-gray-300">
-                  {children}
-                </td>
-              ),
+              td: ({ children }) => <td className="px-4 py-3 border-t border-white/5 text-gray-300">{children}</td>,
             }}
           >
             {response}
