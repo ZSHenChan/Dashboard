@@ -24,7 +24,7 @@ def session_logger_with_task(background_tasks: BackgroundTasks, log_dir: str = c
     if log_dir and not os.path.exists(log_dir):
         os.makedirs(log_dir, exist_ok=True)
 
-    log_path = os.path.join(log_dir, f"sess_{req_id}.log")
+    log_path = os.path.join(log_dir, f"{config.SESSION_LOG_FILE_PATH}/sess_{req_id}.log")
 
     handler = logging.FileHandler(log_path)
     sess_formatter = logging.Formatter(config.SESS_LOG_FORMAT)

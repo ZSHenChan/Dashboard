@@ -28,6 +28,10 @@ class ReplyRequest(BaseModel):
     card_id: str
     meta: ReplyMetadata
 
+class MuteRequest(BaseModel):
+    chat_id: int
+    card_id: str
+
 @event_router.post("/reply")
 async def send_reply(req: ReplyRequest, background_tasks: BackgroundTasks):
     with session_logger_with_task(background_tasks) as logger:
@@ -59,10 +63,25 @@ async def send_reply(req: ReplyRequest, background_tasks: BackgroundTasks):
 
         await r.hdel("dashboard:active_chats", req.chat_id)
         
-        logger.info(f"Processed reply for chat id {req.chat_id}")
+        logger.debug(f"Processed reply for chat id {req.chat_id}")
 
         return {"status": "sent", "text": req.text}
 
+@event_router.post("/mute")
+async def mute_chat_id(req: MuteRequest, background_tasks: BackgroundTasks):
+    with session_logger_with_task(background_tasks) as logger:
+
+        logger.info(f"Received request to mute {req.chat_id}")
+
+        res = await r.sadd("userbot:omit", req.chat_id)
+
+        await r.hdel("dashboard:items", req.card_id)
+
+        await r.hdel("dashboard:active_chats", req.chat_id)
+        
+        logger.info(f"Muted chat id {req.chat_id}")
+
+        return {"status": "success"}
 
 @event_router.get("/notifications")
 async def get_notifications(background_tasks: BackgroundTasks):
@@ -73,12 +92,11 @@ async def get_notifications(background_tasks: BackgroundTasks):
         
         parsed_list.sort(key=lambda x: x['timestamp'], reverse=True)
 
-        logger.info(f"Retrieved {len(parsed_list)} notifications.")
+        logger.debug(f"Retrieved {len(parsed_list)} notifications.")
 
         return parsed_list
 
 
-# 2. LIVE STREAM: Listen for NEW updates
 @event_router.get("/stream")
 async def stream_events(request: Request):
 
@@ -124,7 +142,7 @@ async def delete_notification(card_id: str, background_tasks: BackgroundTasks):
         # 3. Remove from Main Storage
         deleted_count = await r.hdel("dashboard:items", card_id)
 
-        logger.info(f'Deleted card {card_id}')
+        logger.debug(f'Deleted card {card_id}')
 
         return {"deleted": deleted_count > 0}
 
