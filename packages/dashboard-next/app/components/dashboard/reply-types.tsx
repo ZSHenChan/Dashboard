@@ -7,7 +7,7 @@ export interface ReplyOption {
 export interface DashboardCard {
   id: string;
   chat_id: number;
-  sender: string;
+  title: string;
   summary: string;
   urgency: "low" | "medium" | "high";
   suggested_action: "ignore" | "reply" | "calendar_event";

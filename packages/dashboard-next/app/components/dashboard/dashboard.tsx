@@ -54,6 +54,15 @@ export default function Dashboard() {
           meta: payload?.meta,
         }),
       });
+    } else if (action === "mute") {
+      await fetch(`${SERVER_URL}/event/mute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: card.chat_id,
+          card_id: card.id,
+        }),
+      });
     } else {
       // Handle ignore/delete normally
       await fetch(`${SERVER_URL}/event/notifications/${card.id}`, {

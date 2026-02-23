@@ -12,6 +12,7 @@ import {
   Trash2,
   Clock,
   History,
+  VolumeX,
 } from "lucide-react";
 import { DashboardCard, ReplyOption, ReplyMetadata } from "./reply-types";
 import { getUrgencyColor, getButtonColor } from "../utils";
@@ -20,7 +21,7 @@ type EventCardProps = {
   card: DashboardCard;
   onAction: (
     card: DashboardCard,
-    action: "ignore" | "reply",
+    action: "ignore" | "reply" | "mute",
     payload?: {
       messages: string[];
       meta: ReplyMetadata;
@@ -66,9 +67,11 @@ function useDraftSequence(initialMessages: string[] = [""]) {
 const InitialView = ({
   onReply,
   onIgnore,
+  onMute,
 }: {
   onReply: () => void;
   onIgnore: () => void;
+  onMute: () => void;
 }) => (
   <div className="mt-4 flex gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
     <button
@@ -82,6 +85,12 @@ const InitialView = ({
       className="rounded-xl border border-white/30 bg-black/20 px-4 py-2 text-sm font-medium text-white transition hover:bg-black/30"
     >
       Ignore
+    </button>
+    <button
+      onClick={onMute}
+      className="flex items-center gap-2 rounded-xl border border-red-400/30 bg-red-500/20 px-4 py-2 text-sm font-medium text-red-200 transition hover:bg-red-500/30"
+    >
+      <VolumeX size={16} /> Mute
     </button>
   </div>
 );
@@ -110,23 +119,16 @@ const SelectionView = ({
             option.sentiment,
           )}`}
         >
-          <button
-            className="w-full text-left h-full"
-            onClick={() => onSelect(option)}
-          >
+          <button className="w-full text-left h-full" onClick={() => onSelect(option)}>
             <div className="flex justify-between w-full">
-              <span className="font-bold text-sm uppercase tracking-wider opacity-90">
-                {option.label}
-              </span>
+              <span className="font-bold text-sm uppercase tracking-wider opacity-90">{option.label}</span>
               {option.text.length > 1 && (
                 <span className="flex items-center gap-1 text-[10px] bg-white/20 px-1.5 rounded-md">
                   <Layers size={10} /> +{option.text.length - 1}
                 </span>
               )}
             </div>
-            <span className="block text-xs opacity-80 mt-1 line-clamp-2 pr-6">
-              &quot;{option.text[0]}&quot;
-            </span>
+            <span className="block text-xs opacity-80 mt-1 line-clamp-2 pr-6">&quot;{option.text[0]}&quot;</span>
           </button>
           <button
             onClick={(e) => {
@@ -145,9 +147,7 @@ const SelectionView = ({
         className="flex flex-col items-center justify-center p-3 rounded-lg border border-dashed border-white/40 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all min-h-[80px]"
       >
         <Plus size={24} className="mb-1 opacity-70" />
-        <span className="text-xs font-medium uppercase tracking-wider">
-          Custom
-        </span>
+        <span className="text-xs font-medium uppercase tracking-wider">Custom</span>
       </button>
     </div>
   </div>
@@ -176,9 +176,7 @@ const ComposerView = ({
       <button onClick={onBack} className="hover:text-white transition">
         <ChevronLeft size={16} />
       </button>
-      <span className="text-xs font-semibold uppercase tracking-widest">
-        Compose Sequence
-      </span>
+      <span className="text-xs font-semibold uppercase tracking-widest">Compose Sequence</span>
     </div>
 
     <div className="space-y-3 max-h-60 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-white/20">
@@ -192,10 +190,7 @@ const ComposerView = ({
             placeholder="Type a message..."
             rows={1}
           />
-          <button
-            onClick={() => onRemove(idx)}
-            className="mt-2 text-white/30 hover:text-red-300 transition"
-          >
+          <button onClick={() => onRemove(idx)} className="mt-2 text-white/30 hover:text-red-300 transition">
             <Trash2 size={14} />
           </button>
         </div>
@@ -228,9 +223,7 @@ const ContextView = ({ history }: { history: string[] }) => (
 
     <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
       {history.length === 0 ? (
-        <span className="text-xs text-white/30 italic">
-          No history available
-        </span>
+        <span className="text-xs text-white/30 italic">No history available</span>
       ) : (
         history.map((msg, idx) => (
           <div key={idx} className="flex gap-2">
@@ -239,9 +232,7 @@ const ContextView = ({ history }: { history: string[] }) => (
               <div className="h-full w-px bg-white/10"></div>
             </div>
 
-            <div className="rounded-lg bg-white/5 p-2 text-xs text-white/80 backdrop-blur-sm w-full">
-              {msg}
-            </div>
+            <div className="rounded-lg bg-white/5 p-2 text-xs text-white/80 backdrop-blur-sm w-full">{msg}</div>
           </div>
         ))
       )}
@@ -251,9 +242,7 @@ const ContextView = ({ history }: { history: string[] }) => (
 
 // --- MAIN COMPONENT ---
 export function EventCard({ card, onAction }: EventCardProps) {
-  const [mode, setMode] = useState<"initial" | "selecting" | "composing">(
-    "initial",
-  );
+  const [mode, setMode] = useState<"initial" | "selecting" | "composing">("initial");
   const [currentMeta, setCurrentMeta] = useState<ReplyMetadata>({
     label: "Custom",
     sentiment: "neutral",
@@ -308,9 +297,7 @@ export function EventCard({ card, onAction }: EventCardProps) {
   return (
     <div
       className={`relative overflow-hidden rounded-2xl border border-white/30 bg-white/20 shadow-xl backdrop-blur-xl transition-all duration-300 ease-in-out ${
-        mode !== "initial"
-          ? "ring-2 ring-white/40 scale-[1.01]"
-          : "hover:scale-[1.02]"
+        mode !== "initial" ? "ring-2 ring-white/40 scale-[1.01]" : "hover:scale-[1.02]"
       }`}
     >
       <div className="p-6 relative z-10">
@@ -318,18 +305,10 @@ export function EventCard({ card, onAction }: EventCardProps) {
         <div className="flex justify-between items-start">
           <div className="flex-1">
             <div className="flex items-center gap-2.5 mb-2">
-              <span
-                className={`h-2.5 w-2.5 rounded-full shadow-[0_0_10px] ${getUrgencyColor(
-                  card.urgency,
-                )}`}
-              />
-              <h3 className="text-lg font-bold text-white drop-shadow-sm leading-none">
-                {card.sender}
-              </h3>
+              <span className={`h-2.5 w-2.5 rounded-full shadow-[0_0_10px] ${getUrgencyColor(card.urgency)}`} />
+              <h3 className="text-lg font-bold text-white drop-shadow-sm leading-none">{card.title}</h3>
             </div>
-            <p
-              className={`text-white/70 font-medium transition-opacity ${showContext ? "opacity-50 mb-4" : "mb-0"}`}
-            >
+            <p className={`text-white/70 font-medium transition-opacity ${showContext ? "opacity-50 mb-4" : "mb-0"}`}>
               {card.summary}
             </p>
             {showContext && <ContextView history={card.conversation_history} />}
@@ -338,9 +317,7 @@ export function EventCard({ card, onAction }: EventCardProps) {
           <button
             onClick={() => setShowContext(!showContext)}
             className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium transition-all ${
-              showContext
-                ? "bg-white text-blue-900 shadow-md"
-                : "bg-white/10 text-white hover:bg-white/20"
+              showContext ? "bg-white text-blue-900 shadow-md" : "bg-white/10 text-white hover:bg-white/20"
             }`}
           >
             <History size={12} />
@@ -363,6 +340,7 @@ export function EventCard({ card, onAction }: EventCardProps) {
             <InitialView
               onReply={() => setMode("selecting")}
               onIgnore={() => onAction(card, "ignore")}
+              onMute={() => onAction(card, "mute")}
             />
           )}
 
