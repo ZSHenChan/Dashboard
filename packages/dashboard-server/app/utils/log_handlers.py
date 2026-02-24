@@ -4,7 +4,7 @@ from fastapi import BackgroundTasks
 from core.context import get_request_id
 from core.config import config
 from app.logging_config import SensitiveDataFilter, RequestIDFilter
-from lib.s3_client import s3_client
+from app.lib.s3_client import s3_client
 
 async def _send_log_task(sess_id: str, content: str):
     """
