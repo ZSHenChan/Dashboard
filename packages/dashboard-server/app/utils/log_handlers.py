@@ -1,67 +1,48 @@
-import io, os, logging
+import os, logging
 from contextlib import contextmanager
 from fastapi import BackgroundTasks
 from core.context import get_request_id
 from core.config import config
-from app.logging_config import SensitiveDataFilter, RequestIdFilter
-from botocore.exceptions import ClientError
-from lib.s3_client import s3_client
+from app.logging_config import SensitiveDataFilter
 
-central_logger = logging.getLogger(config.CENTRAL_LOGGER_NAME)
-
-async def _send_log_task(session_id: str, log_content: str):
+async def _send_log_task(log_path: str):
     """
-    Uploads the log string directly to S3.
+    Reads the completed log file and processes/sends it.
     """
-    # Define a clear pathing strategy: e.g., logs/YYYY/MM/DD/uuid.log
-    file_path = f"session-logs/{session_id}.log"
-    
-    try:
-        # We convert the string to bytes for the S3 put_object call
-        s3_client.put_object(
-            Bucket=config.S3_BUCKET_NAME,
-            Key=file_path,
-            Body=log_content.encode('utf-8'),
-            ContentType='text/plain'
-        )
-    except ClientError as e:
-        # Important: Since this is a background task, log failures 
-        # to your primary application log so they aren't lost.
-        central_logger.error(f"Failed to upload session log {session_id} to S3: {e}")
+    pass
+    # print(f"Background Task: Processing log file at {log_path}...")
 
 @contextmanager
-def session_logger_with_task(background_tasks: BackgroundTasks):
+def session_logger_with_task(background_tasks: BackgroundTasks, log_dir: str = config.SESSION_LOG_FILE_PATH):
+    """
+    Context manager to handle session-specific logging setup/teardown.
+    NOW WITH SENSITIVE DATA FILTERING!
+    """
     req_id = get_request_id()
+    log_dir = os.path.dirname(log_dir)
 
-    # 1. Create an in-memory string buffer instead of a file
-    log_stream = io.StringIO()
-    handler = logging.StreamHandler(log_stream)
-    
+    if log_dir and not os.path.exists(log_dir):
+        os.makedirs(log_dir, exist_ok=True)
+
+    log_path = os.path.join(log_dir, f"{config.SESSION_LOG_FILE_PATH}/sess_{req_id}.log")
+
+    handler = logging.FileHandler(log_path)
     sess_formatter = logging.Formatter(config.SESS_LOG_FORMAT)
     handler.setFormatter(sess_formatter)
     handler.setLevel(logging.DEBUG)
+    
     handler.addFilter(SensitiveDataFilter()) 
-    handler.addFilter(RequestIdFilter(req_id))
 
-    # 2. Ensure the logger name is UNIQUE to this specific request
-    logger_name = f"{config.SESSION_LOGGER_NAME}.{req_id}"
-    sess_logger = logging.Logger(logger_name)
+    sess_logger = logging.getLogger(config.SESSION_LOGGER_NAME)
     sess_logger.setLevel(logging.DEBUG)
     sess_logger.addHandler(handler)
-    sess_logger.propagate = False
+    
+    sess_logger.propagate = False 
 
     try:
         yield sess_logger
     finally:
-        # 3. Clean up the handler
         sess_logger.removeHandler(handler)
+        handler.close()
         
-        # 4. Extract the log text from memory
-        log_content = log_stream.getvalue()
-        
-        # Free up the memory buffer
-        log_stream.close()
-        
-        # 5. Send the log text directly to your background task
-        if log_content:
-            background_tasks.add_task(_send_log_task, req_id, log_content)
+        background_tasks.add_task(_send_log_task, log_path)

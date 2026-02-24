@@ -2,6 +2,7 @@ import time, logging
 from starlette.types import ASGIApp, Receive, Scope, Send
 from starlette.datastructures import Headers
 from core.config import config
+from core.context import get_request_id
 
 logger = logging.getLogger(config.CENTRAL_LOGGER_NAME)
 
@@ -16,15 +17,16 @@ class AccessLogMiddleware:
 
         start_time = time.time()
 
+        current_id = get_request_id()
+        
         client_ip = scope.get("client", ("0.0.0.0", 0))[0]
         headers = Headers(scope=scope)
         
         forwarded = headers.get("x-forwarded-for")
         if forwarded:
-            client_ip = forwarded.split(",")[0].strip()
+            client_ip = forwarded.split(",")[0]
         else:
-            client_tuple = scope.get("client")
-            client_ip = client_tuple[0] if client_tuple else "0.0.0.0"
+            client_ip = scope.get("client", ("0.0.0.0", 0))[0]
     
         user_agent = headers.get("user-agent", "Unknown Device")
         method = scope["method"]

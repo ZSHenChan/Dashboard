@@ -15,7 +15,7 @@ from app.utils.log_handlers import session_logger_with_task
 
 event_router = APIRouter(prefix="/event", tags=["Event"])
 
-central_logger = logging.getLogger(config.CENTRAL_LOGGER_NAME)
+server_logger = logging.getLogger(config.CENTRAL_LOGGER_NAME)
 
 class ReplyMetadata(BaseModel):
     label: str = Field(..., description="The UI label, e.g., 'Agree', or 'Custom'")
@@ -92,7 +92,7 @@ async def get_notifications(background_tasks: BackgroundTasks):
         
         parsed_list.sort(key=lambda x: x['timestamp'], reverse=True)
 
-        logger.info(f"Retrieved {len(parsed_list)} notifications.")
+        logger.debug(f"Retrieved {len(parsed_list)} notifications.")
 
         return parsed_list
 
@@ -101,7 +101,7 @@ async def get_notifications(background_tasks: BackgroundTasks):
 async def stream_events(request: Request):
 
     req_id = get_request_id()
-    central_logger.info(f"Stream Connected for user {request.client.host}")
+    server_logger.info(f"Stream Connected for user {request.client.host}")
 
     async def event_generator():
         # Create a PubSub listener
@@ -116,10 +116,10 @@ async def stream_events(request: Request):
                     yield f"data: {payload}\n\n"
                     print('Sent stream')
         except asyncio.CancelledError:
-            central_logger.info(f"Stream Disconnected for ID: {req_id}")
+            server_logger.info(f"Stream Disconnected for ID: {req_id}")
             await pubsub.unsubscribe("dashboard:events")
         except Exception as e:
-            central_logger.error(f"Stream Error for ID {req_id}: {e}")
+            server_logger.error(f"Stream Error for ID {req_id}: {e}")
             raise
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
@@ -127,7 +127,7 @@ async def stream_events(request: Request):
 # 3. ACTION TAKEN: Delete the item
 @event_router.delete("/notifications/{card_id}")
 async def delete_notification(card_id: str, background_tasks: BackgroundTasks):
-    central_logger.info("Testing notification endpoint")
+
     with session_logger_with_task(background_tasks) as logger:
         raw_json = await r.hget("dashboard:items", card_id)
         

@@ -1,8 +1,10 @@
 import asyncio
 import json
 import random
+import uuid
 from typing import List
-from bot.calendar_handler import calendar_handler
+from schemas.calendar import CalendarEvent
+from lib.redis_client import redis_client
 
 class CommandListener():
     async def listen_command(self, client, r):
@@ -40,13 +42,20 @@ class CommandListener():
                         print(f"✅ Sent {len(reply_text_list)} chat bubbles")
 
                     elif action == "calendar":
-                        title = data.get("title")
-                        date_time = data.get("datetime")
-                        duration = data.get("duration")
-                        event_type = data.get("event_type")
-                        calendar_handler.add_event_native(title=title, start_dt=date_time, duration_minutes=duration, calendar_type=event_type, alert_minutes_before=30)
+                        calendar_event = CalendarEvent()
+                        calendar_event.title = data.get("title")
+                        calendar_event.datetime = data.get("datetime")
+                        calendar_event.duration = data.get("duration")
+                        calendar_event.event_type = data.get("event_type")
+                        await self.add_calendar_event(calendar_event)
 
         except Exception as e:
             print(f"❌ Error in command listener: {e}")
+
+    async def add_calendar_event(self, event: CalendarEvent) -> None:
+        event_id = str(uuid.uuid4())
+        json_payload = json.dumps(event)
+        await redis_client.hset("calendar:items", event_id, json_payload)
+        await redis_client.publish("calendar:events", json_payload)
 
 command_listener = CommandListener()

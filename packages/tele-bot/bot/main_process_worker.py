@@ -77,7 +77,7 @@ class MainProcessWorker():
             await redis_client.hset("dashboard:items", card_id, json_payload)
 
             await redis_client.hset("dashboard:active_chats", str(chat_id), card_id)
-            # Publish to subscriped frontend
+            
             await redis_client.publish("dashboard:events", json_payload)
             print(f"✅ Queued summary for {chat_id}")
 
