@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSett
 ROOT = Path(__file__).resolve().parents[1]
 
 class ServerSettings(BaseSettings):
-    ENV: str = "development"
+    ENV: str = "production"
     DEBUG: bool = True
     APP_HOST: str = "0.0.0.0"
     APP_PORT: int = 8000

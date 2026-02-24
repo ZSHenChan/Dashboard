@@ -42,13 +42,18 @@ class SensitiveDataFilter(logging.Filter):
             message = re.sub(self.TOKEN_PATTERN, replace, message)
         return message
 
+active_handlers = ["console"]
+# Replace 'ENVIRONMENT' with whatever attribute your config uses (e.g., 'ENV')
+if config.ENV.lower() in ["dev", "development"]:
+    active_handlers.append("file")
+
 LOGGING_CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
         "default": {
             "()": "uvicorn.logging.DefaultFormatter",
-            "fmt": "[%(levelname)s] - %(asctime)s - %(name)s - %(message)s",
+            "fmt": "[%(levelname)s] - %(asctime)s - [%(request_id)s] - %(name)s - %(message)s",
         },
         "standard": {
         "fmt": "[%(asctime)s] [%(request_id)s] %(message)s",
@@ -80,7 +85,7 @@ LOGGING_CONFIG = {
     },
     "loggers": {
         config.CENTRAL_LOGGER_NAME: {
-            "handlers": ["file", "console"],
+            "handlers": active_handlers,
             "level": "DEBUG",
             "propagate": False,
         }

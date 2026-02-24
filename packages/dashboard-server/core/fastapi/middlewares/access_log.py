@@ -17,8 +17,6 @@ class AccessLogMiddleware:
 
         start_time = time.time()
 
-        current_id = get_request_id()
-        
         client_ip = scope.get("client", ("0.0.0.0", 0))[0]
         headers = Headers(scope=scope)
         
