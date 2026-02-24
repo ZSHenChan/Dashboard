@@ -34,7 +34,7 @@ class LoggingSettings(BaseSettings):
     CENTRAL_LOGGER_NAME: str = "server_logger"
     SESSION_LOGGER_NAME: str = "session"
     SESSION_LOG_FILE_PATH: str = "session_logs"
-    SESS_LOG_FORMAT: str = "%(asctime)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s"
+    SESS_LOG_FORMAT: str = "%(asctime)s - %(levelname)s - [%(request_id)s] [%(filename)s:%(lineno)d] - %(message)s"
 
 class BaseConfig(
     ServerSettings, 
