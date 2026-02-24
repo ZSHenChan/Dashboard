@@ -23,6 +23,9 @@ class ServerSettings(BaseSettings):
     MONGODB_URL: str = 'MONGODB_URL'
     MONGODB_AGENT: str = 'tele_agent_db'
     MONGODB_LOGS: str = 'training_logs'
+    S3_BUCKET_NAME: str = 'tele-bot-storage'
+    AWS_ACCESS_KEY_ID: str = 'AWS_ACCESS_KEY_ID'
+    AWS_SECRET_ACCESS_KEY: str = 'AWS_SECRET_ACCESS_KEY'
     SENTRY_DSN: str = 'https://YOUR_SENTRY_URL.ingest.us.sentry.io/SOME_NUMBERS_HERE'
 
 class LoggingSettings(BaseSettings):
@@ -31,7 +34,7 @@ class LoggingSettings(BaseSettings):
     CENTRAL_LOGGER_NAME: str = "server_logger"
     SESSION_LOGGER_NAME: str = "session"
     SESSION_LOG_FILE_PATH: str = "session_logs"
-    SESS_LOG_FORMAT: str = "%(asctime)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s"
+    SESS_LOG_FORMAT: str = "%(asctime)s - %(levelname)s - Session[%(request_id)s] - [%(filename)s:%(lineno)d] - %(message)s"
 
 class BaseConfig(
     ServerSettings, 
