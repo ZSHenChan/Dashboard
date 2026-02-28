@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        RUN_ENV: dev
+    container_name: fastapi_server
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - APP_ENV=dev
+      - APP_DEBUG_FLAG=--debug
+      - APP_HOST=0.0.0.0
+      - APP_PORT=8000
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx_proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend

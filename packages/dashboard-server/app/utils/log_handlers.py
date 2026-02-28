@@ -6,15 +6,21 @@ from core.config import config
 from app.logging_config import SensitiveDataFilter, RequestIDFilter
 from lib.s3_client import s3_client
 
-async def _send_log_task(sess_id: str, content: str):
+central_logger = logging.getLogger(config.CENTRAL_LOGGER_NAME)
+
+def _send_log_task(sess_id: str, content: str):
     """
     Receives the in-memory log content and processes/sends it to S3.
     """
-    s3_client.put_object(
-        Bucket=config.S3_BUCKET_NAME,
-        Key=f"session_logs/{sess_id}.log", 
-        Body=content
-    )
+    try:
+        s3_client.put_object(
+            Bucket=config.S3_BUCKET_NAME,
+            Key=f"session_logs/{sess_id}.log",
+            Body=content
+        )
+    except Exception as ex:
+        central_logger.error("Failed to send log for %s: %s", sess_id, ex)
+
 
 @contextmanager
 def session_logger_with_task(background_tasks: BackgroundTasks):
@@ -43,10 +49,10 @@ def session_logger_with_task(background_tasks: BackgroundTasks):
         yield sess_logger
     finally:
         log_content = log_buffer.getvalue()
-        
+
         sess_logger.removeHandler(handler)
         handler.close()
         log_buffer.close()
-        
+
         if log_content:
             background_tasks.add_task(_send_log_task, sess_id, log_content)

@@ -1,11 +1,7 @@
 import os, json, asyncio
-from dependency_injector.wiring import Provide, inject
-from pydantic import BaseModel, Field
-from typing import Optional, List, Literal
-from core.config import config
-from fastapi import APIRouter, Depends, Query, FastAPI, Request
-from fastapi.responses import StreamingResponse
-from .logger import log_training_data
+from typing import Optional
+from pydantic import BaseModel
+from fastapi import APIRouter
 from core.redis_db import r
 
 calendar_router = APIRouter(prefix="/calendar", tags=["Calendar"])

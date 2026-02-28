@@ -1,0 +1,40 @@
+# Ignore the git history
+.git
+.gitignore
+
+README.md
+.pre-commit-config.yaml
+alembic.ini
+
+# Ignore Docker metadata
+docker/
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Ignore infrastructure configs not needed by Python
+nginx/
+
+# Database
+/migrations
+
+# Ignore runtime data and caches
+server_logs/
+session_logs/
+logs/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Test Files
+tests/
+
+# Ignore local secrets
+.env
+
+# Environments
+.venv/
+venv/
+.env/
+env/

@@ -1,17 +1,15 @@
 import os, json, asyncio
 import logging
-from dependency_injector.wiring import Provide, inject
+from typing import List, Literal
 from pydantic import BaseModel, Field
-from typing import Optional, List, Literal
-from core.config import config
-from fastapi import APIRouter, Depends, Query, FastAPI, Request
+from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 from fastapi import BackgroundTasks
-from .logger import log_training_data
+from app.utils.log_handlers import session_logger_with_task
+from core.config import config
 from core.redis_db import r
 from core.context import get_request_id
-from app.logging_config import SensitiveDataFilter
-from app.utils.log_handlers import session_logger_with_task
+from .logger import log_training_data
 
 event_router = APIRouter(prefix="/event", tags=["Event"])
 
@@ -19,7 +17,7 @@ server_logger = logging.getLogger(config.CENTRAL_LOGGER_NAME)
 
 class ReplyMetadata(BaseModel):
     label: str = Field(..., description="The UI label, e.g., 'Agree', or 'Custom'")
-    sentiment: Literal["positive", "negative", "neutral"] 
+    sentiment: Literal["positive", "negative", "neutral"]
     is_custom: bool = Field(default=False, description="True if the user typed manually")
 
 class ReplyRequest(BaseModel):
@@ -63,7 +61,7 @@ async def send_reply(req: ReplyRequest, background_tasks: BackgroundTasks):
 
         await r.hdel("dashboard:active_chats", req.chat_id)
         
-        logger.debug(f"Processed reply for chat id {req.chat_id}")
+        logger.debug("Processed reply for chat id %s", req.chat_id)
 
         return {"status": "sent", "text": req.text}
 
@@ -71,15 +69,15 @@ async def send_reply(req: ReplyRequest, background_tasks: BackgroundTasks):
 async def mute_chat_id(req: MuteRequest, background_tasks: BackgroundTasks):
     with session_logger_with_task(background_tasks) as logger:
 
-        logger.info(f"Received request to mute {req.chat_id}")
+        logger.info("Received request to mute %s", req.chat_id)
 
-        res = await r.sadd("userbot:omit", req.chat_id)
+        await r.sadd("userbot:omit", req.chat_id)
 
         await r.hdel("dashboard:items", req.card_id)
 
         await r.hdel("dashboard:active_chats", req.chat_id)
         
-        logger.info(f"Muted chat id {req.chat_id}")
+        logger.info("Muted chat id %s", req.chat_id)
 
         return {"status": "success"}
 
@@ -92,7 +90,7 @@ async def get_notifications(background_tasks: BackgroundTasks):
         
         parsed_list.sort(key=lambda x: x['timestamp'], reverse=True)
 
-        logger.debug(f"Retrieved {len(parsed_list)} notifications.")
+        logger.debug("Retrieved %s notifications.", len(parsed_list))
 
         return parsed_list
 
@@ -101,7 +99,7 @@ async def get_notifications(background_tasks: BackgroundTasks):
 async def stream_events(request: Request):
 
     req_id = get_request_id()
-    server_logger.info(f"Stream Connected for user {request.client.host}")
+    server_logger.info("Stream Connected for user %s", request.client.host)
 
     async def event_generator():
         # Create a PubSub listener
@@ -116,10 +114,10 @@ async def stream_events(request: Request):
                     yield f"data: {payload}\n\n"
                     print('Sent stream')
         except asyncio.CancelledError:
-            server_logger.info(f"Stream Disconnected for ID: {req_id}")
+            server_logger.info("Stream Disconnected for ID: %s", req_id)
             await pubsub.unsubscribe("dashboard:events")
         except Exception as e:
-            server_logger.error(f"Stream Error for ID {req_id}: {e}")
+            server_logger.error("Stream Error for ID %s: %s", req_id, e)
             raise
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
@@ -142,7 +140,7 @@ async def delete_notification(card_id: str, background_tasks: BackgroundTasks):
         # 3. Remove from Main Storage
         deleted_count = await r.hdel("dashboard:items", card_id)
 
-        logger.debug(f'Deleted card {card_id}')
+        logger.debug('Deleted card %s', card_id)
 
         return {"deleted": deleted_count > 0}
 

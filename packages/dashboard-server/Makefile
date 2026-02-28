@@ -13,7 +13,7 @@ endif
 
 # The 'run' target now depends on the 'install' target
 run: install
-	poetry run python main.py --env $(ENV) $(DEBUG_FLAG)
+	poetry run python app/main.py --env $(ENV) $(DEBUG_FLAG)
 
 # Target to install dependencies
 install:

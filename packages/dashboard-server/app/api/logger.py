@@ -1,7 +1,7 @@
-from pymongo import MongoClient
+import os
 from typing import List
 from datetime import datetime
-import os
+from pymongo import MongoClient
 from core.config import config
 
 client = MongoClient(config.MONGODB_URL)
@@ -16,6 +16,4 @@ def log_training_data(history: List[str], chosen_reply: List[str], metadata):
         "metadata": metadata,
     }
     
-    # Inserts securely into the cloud
     collection.insert_one(entry)
-    print("✅ Training data saved to MongoDB Atlas")

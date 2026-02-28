@@ -18,7 +18,7 @@ from core.fastapi.middlewares import (
     RequestIDMiddleware,
     AccessLogMiddleware
 )
-from core.helpers.cache import Cache, CustomKeyMaker, RedisBackend
+# from core.helpers.cache import Cache, CustomKeyMaker
 from app.api.event import event_router
 from app.api.calendar import calendar_router
 from app.logging_config import LOGGING_CONFIG
@@ -79,8 +79,8 @@ def make_middleware() -> list[Middleware]:
     return middleware
 
 
-def init_cache() -> None:
-    Cache.init(backend=RedisBackend(), key_maker=CustomKeyMaker())
+# def init_cache() -> None:
+#     Cache.init(backend=RedisBackend(), key_maker=CustomKeyMaker())
 
 
 def create_app() -> FastAPI:
@@ -108,7 +108,7 @@ def create_app() -> FastAPI:
     )
     init_routers(app_=app_)
     init_listeners(app_=app_)
-    init_cache()
+    # init_cache()
 
     @app_.on_event("startup")
     async def startup_msg():
