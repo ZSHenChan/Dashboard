@@ -1,9 +1,11 @@
-import os
+import os, sys
 import click
 import uvicorn
+from app.server import app
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.config import config
-from app.server import app
 
 @click.command()
 @click.option(
