@@ -1,0 +1,28 @@
+services:
+  - type: pserv
+    name: backend-service
+    env: docker
+    plan: free
+    branch: main
+
+    dockerContext: .
+    dockerfilePath: docker/Dockerfile
+
+    envVars:
+      - key: APP_ENV
+        value: prod
+      - key: APP_HOST
+        value: 0.0.0.0
+      - key: APP_PORT
+        value: 8000
+
+  - type: web
+    name: nginx-proxy
+    env: docker
+    dockerContext: ./nginx
+    dockerfilePath: nginx/Dockerfile
+    envVars:
+      - key: PORT
+        value: 80
+      - key: BACKEND_HOST
+        value: backend-service:8000
