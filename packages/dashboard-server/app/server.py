@@ -24,6 +24,7 @@ from app.api.calendar import calendar_router
 from app.logging_config import LOGGING_CONFIG
 
 import sentry_sdk
+from sentry_sdk.integrations.logging import LoggingIntegration
 
 def init_routers(app_: FastAPI) -> None:
     container = Container()
@@ -92,9 +93,14 @@ def create_app() -> FastAPI:
     logging.config.dictConfig(LOGGING_CONFIG)
 
     # Init Sentry
+    sentry_logging = LoggingIntegration(
+        level=logging.INFO,        
+        event_level=logging.ERROR 
+    )
     sentry_sdk.init(
         dsn=config.SENTRY_DSN,
         send_default_pii=True,
+        integrations=[sentry_logging],
     )
 
     app_ = FastAPI(

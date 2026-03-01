@@ -43,7 +43,6 @@ async def send_reply(req: ReplyRequest, background_tasks: BackgroundTasks):
         
         if raw_json:
             card_data = json.loads(raw_json)
-            detected_sentiment = "custom"
             
             history_context = card_data.get("conversation_history", "")
             
@@ -53,32 +52,23 @@ async def send_reply(req: ReplyRequest, background_tasks: BackgroundTasks):
                 metadata=req.meta.model_dump()
             )
         
-        # 2. Publish to Redis (The Userbot hears this instantly)
         await r.publish("userbot:commands", json.dumps(command))
         
-        # 3. Cleanup: Remove the card from the Dashboard since we handled it
         await r.hdel("dashboard:items", req.card_id)
 
         await r.hdel("dashboard:active_chats", req.chat_id)
         
-        logger.debug("Processed reply for chat id %s", req.chat_id)
-
         return {"status": "sent", "text": req.text}
 
 @event_router.post("/mute")
 async def mute_chat_id(req: MuteRequest, background_tasks: BackgroundTasks):
     with session_logger_with_task(background_tasks) as logger:
-
-        logger.info("Received request to mute %s", req.chat_id)
-
         await r.sadd("userbot:omit", req.chat_id)
 
         await r.hdel("dashboard:items", req.card_id)
 
         await r.hdel("dashboard:active_chats", req.chat_id)
         
-        logger.info("Muted chat id %s", req.chat_id)
-
         return {"status": "success"}
 
 @event_router.get("/notifications")
@@ -89,8 +79,6 @@ async def get_notifications(background_tasks: BackgroundTasks):
         parsed_list = [json.loads(val) for val in all_items.values()]
         
         parsed_list.sort(key=lambda x: x['timestamp'], reverse=True)
-
-        logger.debug("Retrieved %s notifications.", len(parsed_list))
 
         return parsed_list
 
@@ -122,7 +110,6 @@ async def stream_events(request: Request):
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
-# 3. ACTION TAKEN: Delete the item
 @event_router.delete("/notifications/{card_id}")
 async def delete_notification(card_id: str, background_tasks: BackgroundTasks):
 
@@ -133,14 +120,10 @@ async def delete_notification(card_id: str, background_tasks: BackgroundTasks):
             data = json.loads(raw_json)
             chat_id = data.get('chat_id')
             
-            # 2. Remove from Index
             if chat_id:
                 await r.hdel("dashboard:active_chats", str(chat_id))
 
-        # 3. Remove from Main Storage
         deleted_count = await r.hdel("dashboard:items", card_id)
-
-        logger.debug('Deleted card %s', card_id)
 
         return {"deleted": deleted_count > 0}
 

@@ -6,16 +6,14 @@ DEBUG ?= true
 ifeq ($(DEBUG), true)
     DEBUG_FLAG := --debug
 else
-    DEBUG_FLAG := 
+    DEBUG_FLAG :=
 endif
 
 .PHONY: run install help
 
-# The 'run' target now depends on the 'install' target
-run: install
-	poetry run python app/main.py --env $(ENV) $(DEBUG_FLAG)
+run:
+	PYTHONPATH=. poetry run python app/main.py --env $(ENV) $(DEBUG_FLAG)
 
-# Target to install dependencies
 install:
 	poetry install
 

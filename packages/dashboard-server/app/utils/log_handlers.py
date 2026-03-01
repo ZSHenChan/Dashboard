@@ -47,6 +47,9 @@ def session_logger_with_task(background_tasks: BackgroundTasks):
 
     try:
         yield sess_logger
+    except Exception:
+        sess_logger.exception("Session failed with an unhandled exception")
+        raise
     finally:
         log_content = log_buffer.getvalue()
 
