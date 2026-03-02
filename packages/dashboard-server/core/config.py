@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from pydantic_settings import BaseSettings, SettingsConfigDict, PydanticBaseSettingsSource
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -14,20 +14,22 @@ class ServerSettings(BaseSettings):
     JWT_SECRET_KEY: str = "fastapi"
     JWT_ALGORITHM: str = "HS256"
     
-    SENTRY_SDN: str = ""
     CELERY_BROKER_URL: str = "amqp://user:bitnami@localhost:5672/"
     CELERY_BACKEND_URL: str = "redis://:password123@localhost:6379/0"
-    REDIS_HOST: str = 'localhost:4000'
-    REDIS_URL: str = 'localhost'
+
+class StorageSettings(BaseSettings):
+    S3_BUCKET_NAME: str = 'tele-bot-storage'
+    AWS_ACCESS_KEY_ID: str = 'AWS_ACCESS_KEY_ID'
+    AWS_SECRET_ACCESS_KEY: str = 'AWS_SECRET_ACCESS_KEY'
+
+class DatabaseSettings(BaseSettings):
+    REDIS_URL: str = 'YOUR_REDIS_URL'
+    REDIS_HOST: str = 'localhost'
     REDIS_PORT: str = '6379'
     REDIS_PASSWORD: str = 'REDIS_PASSWORD_DEFAULT'
     MONGODB_URL: str = 'MONGODB_URL'
     MONGODB_AGENT: str = 'tele_agent_db'
     MONGODB_LOGS: str = 'training_logs'
-    S3_BUCKET_NAME: str = 'tele-bot-storage'
-    AWS_ACCESS_KEY_ID: str = 'AWS_ACCESS_KEY_ID'
-    AWS_SECRET_ACCESS_KEY: str = 'AWS_SECRET_ACCESS_KEY'
-    SENTRY_DSN: str = 'https://YOUR_SENTRY_URL.ingest.us.sentry.io/SOME_NUMBERS_HERE'
 
 class LoggingSettings(BaseSettings):
     CENTRAL_LOG_FILE_NAME: str = "server.log"
@@ -36,10 +38,18 @@ class LoggingSettings(BaseSettings):
     SESSION_LOGGER_NAME: str = "session"
     SESSION_LOG_FILE_PATH: str = "session_logs"
     SESS_LOG_FORMAT: str = "%(asctime)s - %(levelname)s - [%(request_id)s] [%(filename)s:%(lineno)d] - %(message)s"
+    SENTRY_DSN: str = 'https://YOUR_SENTRY_URL.ingest.us.sentry.io/SOME_NUMBERS_HERE'
+
+class SecuritySettings(BaseSettings):
+    RATE_LIMIT_LIMIT: int = 50 # Max requests
+    RATE_LIMIT_PERIOD: int = 60 # Seconds
 
 class BaseConfig(
-    ServerSettings, 
+    ServerSettings,
+    DatabaseSettings,
+    StorageSettings,
     LoggingSettings,
+    SecuritySettings,
     BaseSettings
 ):
     """
@@ -49,7 +59,7 @@ class BaseConfig(
         env_file=str(ROOT / ".env"),
         env_file_encoding="utf-8",
         case_sensitive=True,
-        extra="ignore" # Good practice: ignore unknown env vars to prevent crashes
+        extra="ignore"
     )
 
 

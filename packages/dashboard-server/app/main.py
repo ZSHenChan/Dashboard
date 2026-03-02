@@ -1,7 +1,6 @@
 import os, sys
 import click
 import uvicorn
-
 from core.config import config
 
 @click.command()

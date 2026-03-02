@@ -1,5 +1,5 @@
 import logging, os
-
+from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware import Middleware
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,12 +16,14 @@ from core.fastapi.middlewares import (
     AuthenticationMiddleware,
     SQLAlchemyMiddleware,
     RequestIDMiddleware,
-    AccessLogMiddleware
+    AccessLogMiddleware,
+    SecurityMiddleware
 )
 # from core.helpers.cache import Cache, CustomKeyMaker
-from app.api.event import event_router
-from app.api.calendar import calendar_router
+from app.api import event_router, calendar_router
 from app.logging_config import LOGGING_CONFIG
+
+from config.db import pool
 
 import sentry_sdk
 from sentry_sdk.integrations.logging import LoggingIntegration
@@ -76,6 +78,7 @@ def make_middleware() -> list[Middleware]:
             on_error=on_auth_error,
         ),
         Middleware(SQLAlchemyMiddleware),
+        Middleware(SecurityMiddleware),
     ]
     return middleware
 
@@ -83,6 +86,12 @@ def make_middleware() -> list[Middleware]:
 # def init_cache() -> None:
 #     Cache.init(backend=RedisBackend(), key_maker=CustomKeyMaker())
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    await pool.disconnect()
+    logger = logging.getLogger(config.CENTRAL_LOGGER_NAME)
+    logger.info("Redis pool closed")
 
 def create_app() -> FastAPI:
     # Init Central Logger
@@ -111,6 +120,7 @@ def create_app() -> FastAPI:
         redoc_url=None if config.ENV == "production" else "/redoc",
         dependencies=[Depends(Logging)],
         middleware=make_middleware(),
+        lifespan=lifespan
     )
     init_routers(app_=app_)
     init_listeners(app_=app_)

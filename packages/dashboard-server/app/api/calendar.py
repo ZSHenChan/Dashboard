@@ -1,8 +1,9 @@
 import os, json, asyncio
 from typing import Optional
 from pydantic import BaseModel
-from fastapi import APIRouter
-from core.redis_db import r
+from fastapi import APIRouter, Depends
+import redis.asyncio as redis
+from app.api.dependencies import get_redis_client
 
 calendar_router = APIRouter(prefix="/calendar", tags=["Calendar"])
 
@@ -13,8 +14,7 @@ class AddCalendarEventRequest(BaseModel):
     event_type: str
 
 @calendar_router.post("/add_event")
-async def add_event(req: AddCalendarEventRequest):
-    # 1. Construct the Command Payload
+async def add_event(req: AddCalendarEventRequest, cache: redis.Redis = Depends(get_redis_client)):
     command = {
         "action": "reply",
         "title": req.title,
@@ -23,10 +23,8 @@ async def add_event(req: AddCalendarEventRequest):
         "event_type": req.event_type
     }
     
-    # 2. Publish to Redis (The Userbot hears this instantly)
-    await r.publish("userbot:commands", json.dumps(command))
+    await cache.publish("userbot:commands", json.dumps(command))
     
-    # 3. Cleanup: Remove the card from the Dashboard since we handled it
-    await r.hdel("dashboard:items", req.card_id)
+    await cache.hdel("dashboard:items", req.card_id)
     
     return {"status": "sent", "text": req.title}

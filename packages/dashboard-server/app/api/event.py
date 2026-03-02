@@ -2,12 +2,12 @@ import os, json, asyncio
 import logging
 from typing import List, Literal
 from pydantic import BaseModel, Field
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, BackgroundTasks, Depends
 from fastapi.responses import StreamingResponse
-from fastapi import BackgroundTasks
+import redis.asyncio as redis
+from app.api.dependencies import get_redis_client
 from app.utils.log_handlers import session_logger_with_task
 from core.config import config
-from core.redis_db import r
 from core.context import get_request_id
 from .logger import log_training_data
 
@@ -31,7 +31,7 @@ class MuteRequest(BaseModel):
     card_id: str
 
 @event_router.post("/reply")
-async def send_reply(req: ReplyRequest, background_tasks: BackgroundTasks):
+async def send_reply(req: ReplyRequest, background_tasks: BackgroundTasks, cache: redis.Redis = Depends(get_redis_client)):
     with session_logger_with_task(background_tasks) as logger:
         command = {
             "action": "reply",
@@ -39,7 +39,7 @@ async def send_reply(req: ReplyRequest, background_tasks: BackgroundTasks):
             "text": req.text,
         }
 
-        raw_json = await r.hget("dashboard:items", req.card_id)
+        raw_json = await cache.hget("dashboard:items", req.card_id)
         
         if raw_json:
             card_data = json.loads(raw_json)
@@ -52,29 +52,29 @@ async def send_reply(req: ReplyRequest, background_tasks: BackgroundTasks):
                 metadata=req.meta.model_dump()
             )
         
-        await r.publish("userbot:commands", json.dumps(command))
+        await cache.publish("userbot:commands", json.dumps(command))
         
-        await r.hdel("dashboard:items", req.card_id)
+        await cache.hdel("dashboard:items", req.card_id)
 
-        await r.hdel("dashboard:active_chats", req.chat_id)
+        await cache.hdel("dashboard:active_chats", req.chat_id)
         
         return {"status": "sent", "text": req.text}
 
 @event_router.post("/mute")
-async def mute_chat_id(req: MuteRequest, background_tasks: BackgroundTasks):
+async def mute_chat_id(req: MuteRequest, background_tasks: BackgroundTasks, cache: redis.Redis = Depends(get_redis_client)):
     with session_logger_with_task(background_tasks) as logger:
-        await r.sadd("userbot:omit", req.chat_id)
+        await cache.sadd("userbot:omit", req.chat_id)
 
-        await r.hdel("dashboard:items", req.card_id)
+        await cache.hdel("dashboard:items", req.card_id)
 
-        await r.hdel("dashboard:active_chats", req.chat_id)
+        await cache.hdel("dashboard:active_chats", req.chat_id)
         
         return {"status": "success"}
 
 @event_router.get("/notifications")
-async def get_notifications(background_tasks: BackgroundTasks):
+async def get_notifications(background_tasks: BackgroundTasks, cache: redis.Redis = Depends(get_redis_client)):
     with session_logger_with_task(background_tasks) as logger:
-        all_items = await r.hgetall("dashboard:items")
+        all_items = await cache.hgetall("dashboard:items")
         
         parsed_list = [json.loads(val) for val in all_items.values()]
         
@@ -84,14 +84,14 @@ async def get_notifications(background_tasks: BackgroundTasks):
 
 
 @event_router.get("/stream")
-async def stream_events(request: Request):
+async def stream_events(request: Request, cache: redis.Redis = Depends(get_redis_client)):
 
     req_id = get_request_id()
     server_logger.info("Stream Connected for user %s", request.client.host)
 
     async def event_generator():
         # Create a PubSub listener
-        pubsub = r.pubsub()
+        pubsub = cache.pubsub()
         await pubsub.subscribe("dashboard:events")
         
         try:
@@ -111,19 +111,19 @@ async def stream_events(request: Request):
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @event_router.delete("/notifications/{card_id}")
-async def delete_notification(card_id: str, background_tasks: BackgroundTasks):
+async def delete_notification(card_id: str, background_tasks: BackgroundTasks, cache: redis.Redis = Depends(get_redis_client)):
 
     with session_logger_with_task(background_tasks) as logger:
-        raw_json = await r.hget("dashboard:items", card_id)
+        raw_json = await cache.hget("dashboard:items", card_id)
         
         if raw_json:
             data = json.loads(raw_json)
             chat_id = data.get('chat_id')
             
             if chat_id:
-                await r.hdel("dashboard:active_chats", str(chat_id))
+                await cache.hdel("dashboard:active_chats", str(chat_id))
 
-        deleted_count = await r.hdel("dashboard:items", card_id)
+        deleted_count = await cache.hdel("dashboard:items", card_id)
 
         return {"deleted": deleted_count > 0}
 
