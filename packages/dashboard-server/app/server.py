@@ -23,10 +23,12 @@ from core.fastapi.middlewares import (
 from app.api import event_router, calendar_router
 from app.logging_config import LOGGING_CONFIG
 
-from config.db import pool
+from config.db import pool, global_redis_client
 
 import sentry_sdk
 from sentry_sdk.integrations.logging import LoggingIntegration
+
+central_logger = logging.getLogger(config.CENTRAL_LOGGER_NAME)
 
 def init_routers(app_: FastAPI) -> None:
     container = Container()
@@ -89,9 +91,9 @@ def make_middleware() -> list[Middleware]:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     yield
+    await global_redis_client.close()
     await pool.disconnect()
-    logger = logging.getLogger(config.CENTRAL_LOGGER_NAME)
-    logger.info("Redis pool closed")
+    central_logger.info("Redis pool closed")
 
 def create_app() -> FastAPI:
     # Init Central Logger
@@ -128,8 +130,7 @@ def create_app() -> FastAPI:
 
     @app_.on_event("startup")
     async def startup_msg():
-        logger = logging.getLogger(config.CENTRAL_LOGGER_NAME)
-        logger.info("Application startup complete")
+        central_logger.info("Application startup complete")
 
     return app_
 

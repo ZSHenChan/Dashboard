@@ -10,6 +10,7 @@ To run this project, you will need to add the following environment variables to
 
 - `GOOGLE_API_KEY`
 - `REDIS_URL`
+- `DASHBOARD_SERVER`
 
 ## Getting Started
 

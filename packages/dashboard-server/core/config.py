@@ -5,6 +5,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 ROOT = Path(__file__).resolve().parents[1]
 
 class ServerSettings(BaseSettings):
+    """
+    Settings related to server configuration, networking, and DB connection strings.
+    """
     ENV: str = "production"
     DEBUG: bool = True
     APP_HOST: str = "0.0.0.0"
@@ -18,20 +21,28 @@ class ServerSettings(BaseSettings):
     CELERY_BACKEND_URL: str = "redis://:password123@localhost:6379/0"
 
 class StorageSettings(BaseSettings):
+    """
+    Settings configuration for external storage services like AWS S3.
+    """
     S3_BUCKET_NAME: str = 'tele-bot-storage'
     AWS_ACCESS_KEY_ID: str = 'AWS_ACCESS_KEY_ID'
     AWS_SECRET_ACCESS_KEY: str = 'AWS_SECRET_ACCESS_KEY'
 
 class DatabaseSettings(BaseSettings):
+    """
+    Configuration for database connections including Redis and MongoDB.
+    """
     REDIS_URL: str = 'YOUR_REDIS_URL'
-    REDIS_HOST: str = 'localhost'
-    REDIS_PORT: str = '6379'
-    REDIS_PASSWORD: str = 'REDIS_PASSWORD_DEFAULT'
+    REDIS_MAX_CONNECTIONS: int = 50
     MONGODB_URL: str = 'MONGODB_URL'
     MONGODB_AGENT: str = 'tele_agent_db'
     MONGODB_LOGS: str = 'training_logs'
+    MONGODB_TIMEOUT: int = 10000 # MS
 
 class LoggingSettings(BaseSettings):
+    """
+    Configuration for application logging, file paths, and log formats.
+    """
     CENTRAL_LOG_FILE_NAME: str = "server.log"
     CENTRAL_LOG_FILE_PATH: str = "server_logs"
     CENTRAL_LOGGER_NAME: str = "server_logger"
@@ -41,6 +52,9 @@ class LoggingSettings(BaseSettings):
     SENTRY_DSN: str = 'https://YOUR_SENTRY_URL.ingest.us.sentry.io/SOME_NUMBERS_HERE'
 
 class SecuritySettings(BaseSettings):
+    """
+    Security and rate limiting configurations.
+    """
     RATE_LIMIT_LIMIT: int = 50 # Max requests
     RATE_LIMIT_PERIOD: int = 60 # Seconds
 
@@ -64,15 +78,24 @@ class BaseConfig(
 
 
 class TestConfig(BaseConfig):
+    """
+    Configuration overrides for the testing environment.
+    """
     WRITER_DB_URL: str = "mysql+aiomysql://fastapi:fastapi@localhost:3306/fastapi_test"
     READER_DB_URL: str = "mysql+aiomysql://fastapi:fastapi@localhost:3306/fastapi_test"
 
 
 class LocalConfig(BaseConfig):
+    """
+    Configuration overrides for the local development environment.
+    """
     ...
 
 
 class ProductionConfig(BaseConfig):
+    """
+    Configuration overrides for the production environment.
+    """
     DEBUG: bool = False
 
 

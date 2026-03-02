@@ -1,9 +1,5 @@
 import redis.asyncio as redis
-from config.db import pool
+from config.db import global_redis_client
 
 async def get_redis_client() -> redis.Redis:
-    client = redis.Redis(connection_pool=pool)
-    try:
-        yield client
-    finally:
-        await client.close()
+    return global_redis_client
