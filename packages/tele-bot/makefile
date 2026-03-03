@@ -1,5 +1,5 @@
 # Default values
-ENV ?= local
+ENV ?= dev
 DEBUG ?= true
 
 # Formatting logic for the debug flag
@@ -12,12 +12,11 @@ endif
 .PHONY: run install help
 
 # The 'run' target now depends on the 'install' target
-run: install
-	poetry run python main.py --env $(ENV) $(DEBUG_FLAG)
-
-# Target to install dependencies
 install:
 	poetry install
+
+run: install
+	poetry run python main.py --env $(ENV) $(DEBUG_FLAG)
 
 help:
 	@echo "Usage: make run ENV=local|dev|prod DEBUG=true|false"

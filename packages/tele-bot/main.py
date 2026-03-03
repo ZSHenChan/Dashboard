@@ -1,15 +1,15 @@
 import asyncio
 from telethon import events
-from bot.command_listener import command_listener
 from bot.main_process_worker import main_process_worker
 from config import settings
+from bot.command_listener import command_listener
 from lib.redis_client import redis_client
 from lib.tele_client import tele_client
 
 pending_tasks = {}
 
 async def process_batch(chat_id, card_name):
-    history_objs = await tele_client.get_messages(chat_id, limit=20)
+    history_objs = await tele_client.get_messages(chat_id, limit=5)
     await main_process_worker.process_batch(chat_id=chat_id, card_name=card_name, history_objs=history_objs)
     
 @tele_client.on(events.NewMessage(incoming=True))
@@ -51,10 +51,11 @@ async def wait_and_trigger(chat_id, card_name):
 
 
 async def main():
+
     print("🚀 Userbot Started...")
     await tele_client.start()
     
-    asyncio.create_task(command_listener.listen_command(tele_client, redis_client))
+    asyncio.create_task(command_listener.listen_command(tele_client))
     await tele_client.run_until_disconnected()
 
 if __name__ == '__main__':

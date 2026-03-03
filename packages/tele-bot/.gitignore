@@ -115,7 +115,7 @@ ipython_config.py
 #   This is especially recommended for binary packages to ensure reproducibility, and is more
 #   commonly ignored for libraries.
 #   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-# poetry.lock
+poetry.lock
 # poetry.toml
 
 # pdm
@@ -145,6 +145,9 @@ celerybeat.pid
 *.rdb
 *.aof
 *.pid
+
+# Mlflow
+mlflow.db
 
 # RabbitMQ
 mnesia/
@@ -210,6 +213,7 @@ cython_debug/
 #   and can be added to the global gitignore or merged into this file. However, if you prefer, 
 #   you could uncomment the following to ignore the entire vscode folder
 # .vscode/
+settings.json
 
 # Ruff stuff:
 .ruff_cache/

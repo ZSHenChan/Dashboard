@@ -7,9 +7,9 @@ from schemas.calendar import CalendarEvent
 from lib.redis_client import redis_client
 
 class CommandListener():
-    async def listen_command(self, client, r):
+    async def listen_command(self, client):
         print("🎧 Userbot listening for dashboard commands...")
-        pubsub = r.pubsub()
+        pubsub = redis_client.pubsub()
         await pubsub.subscribe("userbot:commands")
 
         try:

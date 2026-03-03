@@ -4,34 +4,22 @@ from datetime import datetime
 from typing import List
 from lib.redis_client import redis_client
 from schemas.reply import DashboardCard
-from lib.gemini_client import gemini_client
+from workflow.chain import chain
+from workflow.utils.context import UserContext
+from telethon.types import Message
+from utils.aggregate_chat import aggregate_chat_history
 
 class MainProcessWorker():
     def __init__(self):
         pass
     
-    async def process_batch(self, chat_id: str, card_name:str, history_objs: List[str]):
-        if not history_objs:
-            print("🛑 No history object found in telegram client.")
-            return
-
+    async def process_batch(self, chat_id: str, card_name:str, history_objs: List[Message]):
         latest_msg = history_objs[0]
+        lines = await aggregate_chat_history(history_objs)
         
         if latest_msg.out:
             print(f"🛑 Skipping {chat_id}: Last message was sent by me.")
             return
-
-        lines: List[str] = []
-
-        for m in reversed(history_objs):
-            if m.text:
-                sender = await m.get_sender()
-                sender_name = sender.first_name or "Unknown"
-                name = "Me" if m.out else sender_name
-                lines.append(f"{name}: {m.text}")
-                lines.append(f"{name}: {m.text}")
-
-        full_conversation = "\n".join(lines)
 
         try:
             existing_card_id = await redis_client.hget("dashboard:active_chats", str(chat_id))
@@ -44,8 +32,9 @@ class MainProcessWorker():
                 delete_event = json.dumps({"action": "delete", "id": existing_card_id})
                 await redis_client.publish("dashboard:events", delete_event)
         
-        
-            card_object: DashboardCard = gemini_client.prompt_llm(full_conversation=full_conversation)
+            state = await chain.ainvoke({'chat_id':chat_id,'chat_history':history_objs},context=UserContext(memory_user_id='Lewis',chat_id=chat_id))
+            print(state)
+            card_object: DashboardCard = state['dashboard_card']
 
             # if card_object.auto_reply_allowed and card_object.urgency != 'high':
             #     print(f"🚀 Auto-Replying to {chat_id}...")
