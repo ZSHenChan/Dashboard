@@ -11,11 +11,23 @@ endif
 
 .PHONY: run install help
 
-run:
+dev:
 	PYTHONPATH=. poetry run python app/main.py --env $(ENV) $(DEBUG_FLAG)
 
 install:
 	poetry install
+
+test:
+	poetry run pytest tests/ --cov=src
+
+lint:
+	poetry run ruff check .
+
+build-image:
+	docker build -t myapp:latest .
+
+run-container:
+	docker run -p 8000:8000 myapp:latest
 
 help:
 	@echo "Usage: make run ENV=local|dev|prod DEBUG=true|false"

@@ -12,7 +12,7 @@ collection = mongodb_db[config.MONGODB_LOGS]
 
 central_logger = logging.getLogger(config.CENTRAL_LOGGER_NAME)
 
-def log_training_data(history: List[str], chosen_reply: List[str], metadata: dict, redis_client):
+async def log_training_data(history: List[str], chosen_reply: List[str], metadata: dict, redis_client):
     entry = {
         "timestamp": datetime.now(),
         "chat_history": history,
@@ -26,6 +26,6 @@ def log_training_data(history: List[str], chosen_reply: List[str], metadata: dic
     except (ServerSelectionTimeoutError, AutoReconnect) as e:
         central_logger.error("MongoDB failed: {%s}. Saving to Redis fallback.", e)
         try:
-            redis_client.lpush(FAILED_LOGS_KEY, json.dumps(entry))
+            await redis_client.lpush(FAILED_LOGS_KEY, json.dumps(entry))
         except Exception as redis_e:
             central_logger.critical("Both Mongo and Redis failed to log data: %s. Exception: %s", entry, redis_e)
